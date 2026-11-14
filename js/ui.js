@@ -27,8 +27,16 @@ let tt;
 export function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("on");
-  clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2600);
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 5000);
 }
+// 실패 원인을 사람이 읽을 수 있는 말로
+export const why = e => {
+  const c = String(e?.code || e?.message || e);
+  if (c.includes("permission-denied")) return "Firestore 보안 규칙이 이 계정의 쓰기를 막고 있습니다 (permission-denied).";
+  if (c.includes("unavailable") || c.includes("network")) return "네트워크 연결을 확인하세요.";
+  if (c.includes("image too large")) return "이미지가 너무 큽니다.";
+  return "원인: " + c;
+};
 export async function lightbox(id) {
   const lb = document.getElementById("lb");
   lb.innerHTML = ""; lb.classList.add("on");
@@ -81,7 +89,7 @@ export function buildFields(schema, obj, ctx = {}) {
           if (ctx.local) obj[f.k] = await compress(file, f.max || 1400, 700000);
           else if (f.type === "inline") obj[f.k] = await compress(file, f.max || 480, f.limit || 120000);
           else obj[f.k] = await saveImage(file, { thumb: f.thumb });
-        } catch (e) { console.error(e); toast("이미지를 올리지 못했습니다. 로그인 상태를 확인하세요."); }
+        } catch (e) { console.error(e); toast("이미지를 올리지 못했습니다. " + why(e)); }
         inp.value = ""; show(); ch();
       };
       rm.onclick = () => { obj[f.k] = ""; show(); ch(); };
@@ -130,13 +138,13 @@ export function openForm({ title, schema, data, onSave, onDelete }) {
     } catch (e) {
       console.error(e);
       saveBtn.disabled = false; saveBtn.textContent = "저장";
-      toast("저장하지 못했습니다. 편집 권한이 있는 계정인지 확인하세요.");
+      toast("저장하지 못했습니다. " + why(e));
     }
   };
   const del = m.querySelector("[data-del]");
   if (del) del.onclick = async () => {
     if (!confirm("삭제하면 되돌릴 수 없습니다. 삭제할까요?")) return;
     try { await onDelete(); close(); toast("삭제했습니다"); }
-    catch (e) { console.error(e); toast("삭제하지 못했습니다."); }
+    catch (e) { console.error(e); toast("삭제하지 못했습니다. " + why(e)); }
   };
 }

@@ -256,7 +256,7 @@ const heroH = () => document.getElementById("top")?.offsetHeight || innerHeight;
 const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
 function slideTo(to) {
   sliding = true;
-  const from = scrollY, t0 = performance.now(), dur = 850;
+  const from = scrollY, t0 = performance.now(), dur = 550;
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   (function step(now) {
     const t = Math.min(1, (now - t0) / dur);
