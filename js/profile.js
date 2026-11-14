@@ -1,5 +1,5 @@
 // 캐릭터 프로필 양식: 사이트의 캐릭터 파일과 프로필 편집기가 같이 쓴다
-import { esc, fmt, imgAttr } from "./ui.js";
+import { esc, fmt, inl, imgAttr } from "./ui.js";
 
 export const PROFILE_FIELDS = [
   { type: "head", label: "기본 정보" },
@@ -7,7 +7,7 @@ export const PROFILE_FIELDS = [
   { k: "serial", label: "일련번호", ph: "2080  004" },
   { k: "clearance", label: "보안 등급 (우측 상단)", ph: "Seven" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
-  { k: "tagline", label: "한 줄 소개 (굵게)" },
+  { k: "tagline", label: "한 줄 소개 (굵게)", hint: "__밑줄 강조__ 를 쓸 수 있습니다." },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
   { k: "profile", label: "프로필 본문", type: "area" },
@@ -20,58 +20,68 @@ export const PROFILE_FIELDS = [
   { type: "head", label: "Record" },
   { k: "record", label: "이력 · 기타", type: "area" },
   { type: "head", label: "Prologue" },
-  { k: "tracks", label: "테마곡", type: "list", item: "곡", fields: [
+  { k: "tracks", label: "도입부", type: "list", item: "도입부", fields: [
     { k: "title", label: "제목 (크게)", ph: "HONG KONG" },
     { k: "lyric", label: "가사 한 줄" },
     { k: "song", label: "곡명" }, { k: "artist", label: "아티스트" },
-    { k: "yt", label: "YouTube 링크", ph: "https://youtu.be/..." }] }
+    { k: "yt", label: "YouTube 링크 (원판을 누르면 재생)", ph: "https://youtu.be/..." },
+    { k: "body", label: "펼쳤을 때 나오는 글", type: "area" }] }
 ];
 
 export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1] || "";
 
 const sec = (title, sub, body) => body ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body}</section>` : "";
 
-// opt.static: 내보내기용. 스크립트 없이 동작하도록 테마곡을 링크로 만든다.
+// opt.static: 내보내기용. 스크립트 없이 보이도록 글은 펼쳐 두고 원판은 링크로 만든다.
+// opt.pos: 상단 이미지 위치 조정용 경로
 export function renderProfile(c, opt = {}) {
   const affil = (c.affil || []).filter(r => r.k || r.v);
   const tracks = (c.tracks || []).filter(t => t.title || t.song);
-  const chip = (l, v, dot) => v ? `<span class="pf-chip">${dot ? "<i></i>" : ""}${l}<b>${esc(v)}</b></span>` : "";
-  const side = c.sideImg || c.height || c.nation || c.age;
+  const chip = (cls, l, v, dot) => v ? `<span class="pf-chip ${cls}">${dot ? "<i></i>" : ""}${l}<b>${esc(v)}</b></span>` : "";
+  const chips = chip("c1", "HEIGHT", c.height) + chip("c2", "NATION", c.nation, 1) + chip("c3", "AGE", c.age);
+  const side = c.sideImg || chips;
   const trk = t => {
-    const id = ytId(t.yt);
-    const inner = `<span class="pf-vinyl"></span><span class="pf-trk-t"><small>${esc(t.lyric)}</small><b>${esc(t.title)}</b><em>♪ ${esc(t.song)}${t.artist ? "<br>— " + esc(t.artist) : ""}</em></span><span class="pf-plus">+</span>`;
-    return opt.static
-      ? `<div class="pf-trk"><a class="pf-trk-h" ${id ? `href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener"` : ""}>${inner}</a></div>`
-      : `<div class="pf-trk"><div class="pf-trk-h" data-a="trk" data-yt="${id}">${inner}</div></div>`;
+    const id = ytId(t.yt), body = fmt(t.body);
+    const text = `<span class="pf-trk-t"><small>${esc(t.lyric)}</small><b>${esc(t.title)}</b><em>♪ ${esc(t.song)}${t.artist ? "<br>— " + esc(t.artist) : ""}</em></span>`;
+    const more = body ? `<div class="pf-trk-b"><div>${body}</div></div>` : "";
+    if (opt.static) return `<div class="pf-trk open"><div class="pf-trk-h">${id ? `<a class="pf-vinyl" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener"></a>` : `<span class="pf-vinyl"></span>`}<span class="pf-trk-m">${text}</span></div>${more}</div>`;
+    return `<div class="pf-trk"><div class="pf-trk-h"><span class="pf-vinyl" data-a="trk" data-yt="${id}"></span>
+      <span class="pf-trk-m" data-a="trkopen">${text}${body ? `<span class="pf-plus">+</span>` : ""}</span></div>${more}</div>`;
   };
   const left = sec("Profile", "프로필", fmt(c.profile))
     + sec("Affiliation", "소속 및 계급", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd></div>`).join("")}</dl>` : "")
     + sec("Record", "이력 · ETC", fmt(c.record));
+  const main = c.mainImg ? `<div class="pf-main"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} ${c.mainImgPos ? `style="object-position:${esc(c.mainImgPos)}"` : ""} alt=""></div>` : "";
   return `<div class="pf">
     <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span>${c.clearance ? "Clearance =<br>" + esc(c.clearance) : ""}</span></div>
-    <div class="pf-hero">${c.mainImg ? `<img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} ${c.mainImgPos ? `style="object-position:${esc(c.mainImgPos)}"` : ""} alt="">` : ""}
+    <div class="pf-hero">${main}
       <div class="pf-id">${c.serial ? `<small>serial no. ${esc(c.serial)}</small>` : ""}
         <h1>${esc(c.num || c.name || "—")}</h1>
-        <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${esc(c.tagline)}</strong>` : ""}${fmt(c.intro)}
+        <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${inl(c.tagline)}</strong>` : ""}${fmt(c.intro)}
       </div>
     </div>
     <div class="pf-cols"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
-      ${side ? `<aside class="pf-side">${c.sideImg ? `<img ${imgAttr(c.sideImg)} alt="">` : ""}${chip("HEIGHT", c.height)}${chip("NATION", c.nation, 1)}${chip("AGE", c.age)}</aside>` : ""}
+      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>` : chips}</aside>` : ""}
     </div>
-    ${sec("Prologue", opt.static ? "도입부 · 원반을 누르면 테마곡으로 이동" : "도입부 · 원반을 누르면 테마곡 재생", tracks.map(trk).join(""))}
+    ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""))}
     <div class="pf-foot"></div>
   </div>`;
 }
 
-// 원반 클릭: 플레이어 열기/닫기
-export function toggleTrack(head) {
-  const box = head.parentElement, on = box.classList.toggle("on");
-  box.querySelector(".pf-player")?.remove();
-  head.querySelector(".pf-plus").textContent = on ? "−" : "+";
-  if (!on) return;
-  const id = head.dataset.yt;
+// 원판 클릭: 테마곡 재생/정지 (플레이어는 화면에 보이지 않는다)
+export function toggleTrack(vinyl) {
+  const box = vinyl.closest(".pf-trk"), id = vinyl.dataset.yt, on = !box.classList.contains("on");
+  document.querySelectorAll(".pf-trk.on").forEach(b => { b.classList.remove("on"); b.querySelector(".pf-player")?.remove(); });
+  if (!on || !id) return;
+  box.classList.add("on");
   const p = document.createElement("div");
   p.className = "pf-player";
-  p.innerHTML = id ? `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>` : "";
-  if (id) box.append(p);
+  p.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay; encrypted-media"></iframe>`;
+  box.append(p);
+}
+// 글 펼치기/접기
+export function toggleTrackText(el) {
+  const box = el.closest(".pf-trk"), plus = box.querySelector(".pf-plus");
+  if (!plus) return;
+  plus.textContent = box.classList.toggle("open") ? "−" : "+";
 }

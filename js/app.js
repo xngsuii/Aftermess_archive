@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm, why } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, toggleTrack } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 
 const app = document.getElementById("app");
@@ -51,7 +51,7 @@ function faction(f) {
     ${(f.overview || []).map(o => `<div class="ov"><h4>${esc(o.title)}<small>${esc(o.en)}</small></h4>${fmt(o.body)}</div>`).join("") || `<p class="empty">개요 항목이 없습니다.</p>`}
     <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${ed("fmap")}</div></div>
     <div class="map" data-pos="fac|${k}|mapImgPos" ${bgAttr(f.mapImg, f.mapImgPos)}>${f.mapImg ? "" : "MAP · 이미지 준비 중"}</div>
-    <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${(f.units || []).length} UNITS ${ed("funits")}</div></div>
+    <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
       <div class="tg-b"><div>${fmt(u.body)}</div></div></article>`).join("")}</div>
@@ -73,15 +73,15 @@ function people() {
         ${S.fac === "milgram" ? `<div class="ft"><small>${esc(c.frontSub)}</small><strong>${esc(c.frontMain)}</strong></div>` : ""}</div>
       <div class="pc-b" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}><b>${esc(c.name)}</b><i></i><span>${esc(info(c))}</span><span>${esc(c.role)}</span></div>
     </div></div>`;
-  const block = cs => led ? cs.map(lcard).join("") : `<div class="pgrid">${cs.map(pcard).join("")}</div>`;
+  const block = (cs, g) => `<div class="${led ? "lgrid" : "pgrid"}" ${g == null ? "" : `data-group="${esc(g)}"`}>${cs.map(led ? lcard : pcard).join("")}${cs.length ? "" : none}</div>`;
   const head = (name, en, n) => `<div class="grp"><b>${esc(name)}</b><small>${esc(en)}</small><i></i><span>${String(n).padStart(2, "0")}</span></div>`;
   const groups = (f.groups || []).filter(g => g.name);
   let body;
   if (groups.length) {
     const names = groups.map(g => g.name), rest = list.filter(c => !names.includes(c.group));
-    body = groups.map(g => { const cs = list.filter(c => c.group === g.name); return head(g.name, g.en, cs.length) + (cs.length ? block(cs) : none); }).join("")
-      + (rest.length ? head("미분류", "", rest.length) + block(rest) : "");
-  } else body = list.length ? block(list) : none;
+    body = groups.map(g => { const cs = list.filter(c => c.group === g.name); return head(g.name, g.en, cs.length) + block(cs, g.name); }).join("")
+      + (rest.length ? head("미분류", "", rest.length) + block(rest, "") : "");
+  } else body = list.length ? block(list, null) : none;
   return `<section id="people" class="sec wrap">
     <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
     ${body}
@@ -169,7 +169,7 @@ const EDIT = {
   fhead: () => facForm("진영 머리말", [T("name", "진영 이름"), T("sub", "부제", "// classified, HQ COMMANDER"), A("quote", "인용문 (영문)"), A("quoteKo", "인용문 (번역)"), T("quoteSrc", "출처", "INTERCEPT 2078 / UNVERIFIED")]),
   fov: () => facForm("Overview", [{ k: "overview", label: "항목", type: "list", fields: [T("title", "제목", "연혁"), T("en", "영문", "ORIGIN"), A("body", "내용")] }]),
   fmap: () => facForm("지도 · 도면", [T("mapTitle", "섹션 제목", "Territory"), T("mapSub", "설명"), { k: "mapImg", label: "지도 이미지", type: "img" }]),
-  funits: () => facForm("조직 구성", [T("unitsTitle", "섹션 제목", "Squad"), T("unitsSub", "설명"), { k: "units", label: "조직", type: "list", item: "조직", fields: [T("code", "코드", "SQD. 01"), T("tag", "우측 태그", "ASSAULT"), T("name", "이름", "강습타격대"), T("sub", "부가 설명"), { k: "img", label: "이미지", type: "img" }, A("body", "펼쳤을 때 내용")] }]),
+  funits: () => facForm("조직 구성", [T("unitsTitle", "섹션 제목", "Squad"), T("unitsSub", "설명"), T("unitsLabel", "우측 표시 글 (비우면 개수 자동 표시)", "3 SQD"), { k: "units", label: "조직", type: "list", item: "조직", fields: [T("code", "코드", "SQD. 01"), T("tag", "우측 태그", "ASSAULT"), T("name", "이름", "강습타격대"), T("sub", "부가 설명"), { k: "img", label: "이미지", type: "img" }, A("body", "펼쳤을 때 내용")] }]),
   fchron: () => facForm("Chronicle", [T("chronTitle", "섹션 제목"), T("chronSub", "설명", "주요 작전 연표 · 2071 — 2080"), { k: "chron", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2071. 11. 09"), T("tag", "우측 태그", "FIRST RECORD"), T("title", "제목"), A("body", "내용")] }]),
   newchar: () => {
     const c = { id: newId("c"), faction: S.fac, order: facChars().reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1, affil: [], tracks: [], assets: [] };
@@ -237,6 +237,7 @@ const ACT = {
   tag(t) { S.tag = t; render(); document.getElementById("trivia").scrollIntoView(); },
   full(id) { lightbox(id); },
   trk(_, el) { toggleTrack(el); },
+  trkopen(_, el) { toggleTrackText(el); },
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
 document.addEventListener("click", e => {
@@ -380,31 +381,52 @@ addEventListener("wheel", e => {
   e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, 100); applyAdj();
 }, { passive: false });
 
-// ---------- 캐릭터 순서: 로그인 상태에서 카드를 끌어다 놓기 ----------
-let dragId = null;
+// ---------- 캐릭터 순서: 로그인 상태에서 카드를 끌면 다른 카드가 밀려나고, 놓으면 저장된다 ----------
+let dragEl = null, dragLock = 0;
+const CARD = ".pcard,.lcard";
+function flip(change) {
+  const els = [...document.querySelectorAll("#people .pcard, #people .lcard")];
+  const before = new Map(els.map(el => [el, el.getBoundingClientRect()]));
+  change();
+  els.forEach(el => {
+    const a = before.get(el), b = el.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+    if (!dx && !dy) return;
+    el.style.transition = "none"; el.style.transform = `translate(${dx}px,${dy}px)`;
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.style.transition = "transform .25s ease"; el.style.transform = ""; }));
+  });
+  dragLock = performance.now() + 260;
+}
 document.addEventListener("dragstart", e => {
-  const el = e.target.closest?.(".pcard,.lcard");
+  const el = e.target.closest?.(CARD);
   if (adj || !el || !S.user) return;
-  dragId = el.dataset.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId);
+  dragEl = el; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", el.dataset.id);
+  setTimeout(() => el.classList.add("dragging"));
 });
-document.addEventListener("dragover", e => { if (dragId && e.target.closest(".pcard,.lcard")) e.preventDefault(); });
-document.addEventListener("dragend", () => dragId = null);
-document.addEventListener("drop", async e => {
-  const el = e.target.closest(".pcard,.lcard");
-  if (!dragId || !el) return;
+document.addEventListener("dragover", e => {
+  if (!dragEl) return;
+  const over = e.target.closest(CARD), box = e.target.closest("#people .pgrid, #people .lgrid");
+  if (!over && !box) return;
   e.preventDefault();
-  const from = dragId; dragId = null;
-  if (el.dataset.id === from) return;
-  const list = facChars(), a = list.find(c => c.id === from), b = list.find(c => c.id === el.dataset.id);
-  if (!a || !b) return;
-  const j = list.indexOf(b);
-  list.splice(list.indexOf(a), 1); list.splice(j, 0, a);
-  // 놓은 자리의 카드와 같은 그룹으로 옮기고, 순서를 0부터 다시 매긴다
+  if (performance.now() < dragLock) return;
+  if (over && over !== dragEl) {
+    const r = over.getBoundingClientRect();
+    const after = over.matches(".lcard") ? e.clientY > r.top + r.height / 2 : e.clientX > r.left + r.width / 2;
+    if (after ? over.nextElementSibling === dragEl : over.previousElementSibling === dragEl) return;
+    flip(() => over.parentNode.insertBefore(dragEl, after ? over.nextElementSibling : over));
+  } else if (!over && box && !box.contains(dragEl)) flip(() => box.prepend(dragEl));
+});
+document.addEventListener("drop", e => { if (dragEl) e.preventDefault(); });
+document.addEventListener("dragend", async () => {
+  if (!dragEl) return;
+  dragEl.classList.remove("dragging"); dragEl = null;
+  // 화면에 놓인 순서와 그룹을 그대로 저장한다
   const changed = [];
-  list.forEach((c, n) => {
-    const g = c === a ? (b.group || "") : (c.group || "");
+  document.querySelectorAll("#people .pcard, #people .lcard").forEach((el, n) => {
+    const c = S.chars.find(x => x.id === el.dataset.id); if (!c) return;
+    const g = el.closest("[data-group]")?.dataset.group ?? (c.group || "");
     if (String(c.order) !== String(n) || (c.group || "") !== g) changed.push({ ...c, order: n, group: g });
   });
+  if (!changed.length) return;
   try { for (const c of changed) await saveChar(c); toast("순서를 저장했습니다"); }
   catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); }
   render();

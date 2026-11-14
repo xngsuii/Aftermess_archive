@@ -53,7 +53,7 @@ async function exportHtml() {
 async function exportPng(btn) {
   if (!window.htmlToImage) return toast("이미지 저장 기능을 불러오지 못했습니다.");
   const node = document.querySelector("#ed-pv .pf");
-  node.querySelectorAll(".pf-trk.on .pf-trk-h").forEach(h => h.click());
+  node.querySelectorAll(".pf-trk.on .pf-vinyl").forEach(h => h.click());
   btn.disabled = true; btn.textContent = "만드는 중…";
   try {
     const bg = getComputedStyle(node).getPropertyValue("--bg").trim();

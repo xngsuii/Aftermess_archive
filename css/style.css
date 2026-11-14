@@ -304,3 +304,13 @@ body.adjusting{user-select:none;-webkit-user-select:none}
 .pc-f .ft small{font-size:9px;font-weight:700;letter-spacing:.12em;color:#c9c9c5;text-transform:uppercase}
 .pc-f .ft strong{font-size:11px;font-weight:800;color:#fff;text-transform:uppercase}
 .pcard[draggable],.lcard[draggable]{cursor:grab}
+
+/* ---- v5 ---- */
+body[data-faction="milgram"] .units,body[data-faction="ledger"] .units{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-faction="milgram"] .unit,body[data-faction="ledger"] .unit{min-height:230px}
+body[data-faction="milgram"] .unit:first-child{grid-column:1/-1;min-height:300px}
+.unit .tg-b>div>p:first-child{border-top:1px solid var(--line);padding-top:12px;margin-top:10px}
+.pc-b::before{background:linear-gradient(to top,rgba(6,6,7,.7),transparent 46%)}
+.pgrid .empty{grid-column:1/-1}
+.pgrid:has(.pcard) .empty,.lgrid:has(.lcard) .empty{display:none}
+.dragging{opacity:.3}
