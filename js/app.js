@@ -1,5 +1,5 @@
 import { auth } from "./firebase.js";
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm } from "./ui.js";
@@ -14,13 +14,13 @@ const facChars = () => S.chars.filter(c => c.faction === S.fac);
 // ---------- 화면 ----------
 function hero(s) {
   return `<section id="top" class="hero"><div class="hero-bg" ${bgAttr(s.heroImg)}></div>${ed("hero", "메인 편집")}
-    <div class="hero-in wrap"><p class="kicker">${inl(s.kicker)}</p>
-      <h1>${esc(s.title)}</h1><div class="hero-desc">${fmt(s.desc)}</div></div></section>`;
+    <p class="kicker">${inl(s.kicker)}</p>
+    <div class="hero-in wrap"><h1>${esc(s.title)}</h1></div></section>`;
 }
 function world(s) {
   const orgs = FAC.map((k, i) => { const f = S.factions[k]; return `
     <article class="org tg" data-faction="${k}">
-      <button class="org-h tg-h" data-a="tog"><i></i><b>${esc(f.short || f.name)}</b><small>ORG. 0${i + 1}</small><span class="plus">+</span></button>
+      <button class="org-h tg-h" data-a="tog"><b>${esc(f.short || f.name)}</b><small>ORG. 0${i + 1}</small><span class="plus">+</span></button>
       <div class="tg-b"><div class="org-ban" ${bgAttr(f.banner)}><small>${esc(f.tagline)}</small><strong>${esc(f.name)}</strong><span>${esc(f.est)}</span></div>
         <div class="org-txt">${fmt(f.summary)}<button class="org-go" data-a="go:${k}">진영 페이지 보기 →</button> ${ed("forg:" + k)}</div></div>
     </article>`; }).join("");
@@ -32,9 +32,9 @@ function world(s) {
     <div class="sec-h"><div><h2>Synopsis</h2></div><div class="r">시놉시스 ${ed("syn")}</div></div>
     <div class="syn"><ol><li>2030<small>핵전쟁 발발</small></li><li class="gap">— 50y<small>멸망 위기</small></li><li>2080<small>현재 · 애프터메스</small></li></ol>
       <div><h3>${esc(s.synTitle)}</h3>${fmt(s.synBody) || `<p class="empty">시놉시스 본문을 입력하세요.</p>`}</div></div>
-    <div class="orgs">${orgs}</div>
     <div class="sec-h"><div><h2>Timeline</h2><small>세계관 연표 · 2030 — 2080</small></div><div class="r">${ed("timeline")}</div></div>
-    ${eras}</section>`;
+    ${eras}
+    <div class="orgs">${orgs}</div></section>`;
 }
 function faction(f) {
   const k = S.fac;
@@ -138,7 +138,7 @@ function editMemo(m, isNew) {
     onDelete: isNew ? null : async () => { await delMemo(m.id); render(); } });
 }
 const EDIT = {
-  hero: () => openForm({ title: "메인 화면", schema: [T("title", "타이틀"), { k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img" }, A("desc", "설명 문구")], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
+  hero: () => openForm({ title: "메인 화면", schema: [T("title", "타이틀"), { k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img" }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   syn: () => openForm({ title: "시놉시스", schema: [T("synTitle", "큰 문장"), A("synBody", "본문")], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   timeline: () => openForm({ title: "타임라인", schema: [{ k: "eras", label: "시대", type: "list", item: "시대", fields: [T("name", "이름", "붕괴기"), T("en", "영문", "COLLAPSE"), T("range", "기간", "2030 — 2038"), { k: "img", label: "이미지", type: "img" },
     { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), T("desc", "설명 (선택)")] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
@@ -174,8 +174,27 @@ const ACT = {
     themeLabel();
   },
   async login() {
-    try { if (S.user) await signOut(auth); else await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch (e) { console.error(e); toast("로그인하지 못했습니다."); }
+    if (S.user) { await signOut(auth).catch(() => {}); return toast("로그아웃했습니다"); }
+    const m = document.getElementById("modal");
+    m.innerHTML = `<form class="mbox" style="width:min(360px,100%)"><header><h3>로그인</h3><button type="button" class="btn" data-x>닫기</button></header>
+      <div class="mbody"><div class="fld"><label>이메일</label><input type="email" name="email" autocomplete="username" required></div>
+      <div class="fld"><label>비밀번호</label><input type="password" name="pw" autocomplete="current-password" required></div>
+      <div class="hint" id="login-msg" style="color:var(--c-ww);font-size:12px"></div></div>
+      <footer><span style="flex:1"></span><button class="btn pri">로그인</button></footer></form>`;
+    m.classList.add("on");
+    const close = () => { m.classList.remove("on"); m.innerHTML = ""; };
+    m.querySelector("[data-x]").onclick = close;
+    m.querySelector("form").onsubmit = async e => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector(".pri");
+      btn.disabled = true;
+      try { await signInWithEmailAndPassword(auth, f.email.value.trim(), f.pw.value); close(); toast("로그인했습니다"); }
+      catch (err) {
+        console.error(err); btn.disabled = false;
+        f.querySelector("#login-msg").textContent = "로그인하지 못했습니다. 이메일과 비밀번호를 확인하세요.";
+      }
+    };
+    m.querySelector("input").focus();
   },
   editor: openEditor, back: closeEditor,
   fac(k) { S.fac = k; S.openChar = null; render(); },
@@ -230,3 +249,43 @@ let goal = 6, cur = 0;
   goal = 100;
   if (failed) toast("데이터를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.");
 })();
+
+// ---------- 메인 화면 넘김: 메인에서 아래로 굴리면 한 번에 다음 화면으로 넘어간다 ----------
+let sliding = false;
+const heroH = () => document.getElementById("top")?.offsetHeight || innerHeight;
+const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
+function slideTo(to) {
+  sliding = true;
+  const from = scrollY, t0 = performance.now(), dur = 850;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  (function step(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    scrollTo({ top: from + (to - from) * ease(t), behavior: "instant" });
+    if (t < 1) requestAnimationFrame(step); else setTimeout(() => sliding = false, 150);
+  })(t0);
+}
+// dir > 0: 아래로. 넘김을 처리했으면 true
+function pageTurn(dir) {
+  if (blocked()) return false;
+  if (sliding) return true;
+  const h = heroH(), y = scrollY;
+  if (dir > 0 && y < h - 2) { slideTo(h); return true; }
+  if (dir < 0 && y > 0 && y <= h + 2) { slideTo(0); return true; }
+  return false;
+}
+addEventListener("wheel", e => { if (!e.ctrlKey && pageTurn(e.deltaY)) e.preventDefault(); }, { passive: false });
+addEventListener("keydown", e => {
+  if (e.target.closest("input,textarea,select")) return;
+  const d = ["ArrowDown", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "PageUp"].includes(e.key) ? -1 : 0;
+  if (d && pageTurn(d)) e.preventDefault();
+});
+let ty = null;
+addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
+addEventListener("touchmove", e => {
+  if (ty == null || blocked()) return;
+  const d = ty - e.touches[0].clientY, h = heroH();
+  if (sliding || (d > 0 && scrollY < h - 2) || (d < 0 && scrollY > 0 && scrollY <= h + 2)) {
+    if (e.cancelable) e.preventDefault();
+    if (Math.abs(d) > 30 && pageTurn(d)) ty = null;
+  }
+}, { passive: false });
