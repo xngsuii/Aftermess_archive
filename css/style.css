@@ -290,3 +290,17 @@ body.adjusting{user-select:none;-webkit-user-select:none}
 #adj.on{display:flex}
 #adj button{border:1px solid var(--bg);color:var(--bg);padding:3px 12px;font-size:12px;font-weight:700}
 @media(max-width:720px){.syn-row{grid-template-columns:1fr;gap:6px}}
+
+/* ---- v4 ---- */
+.unit{display:flex;flex-direction:column;min-height:320px}
+.unit-top{flex:1;min-height:0}
+.unit .tg-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease,padding .3s ease;padding:0 14px}
+.unit.open .tg-b{display:grid;grid-template-rows:1fr;padding:0 14px 18px}
+.unit .tg-b>div{overflow:hidden;min-height:0}
+.pcard{aspect-ratio:13/16}
+.pc-f{background-size:cover;background-position:top center}
+.pc-f.img::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(6,6,7,.85) 5%,transparent 45%)}
+.pc-f .ft{position:absolute;left:10px;right:10px;bottom:10px;z-index:1;display:flex;flex-direction:column;line-height:1.4}
+.pc-f .ft small{font-size:9px;font-weight:700;letter-spacing:.12em;color:#c9c9c5;text-transform:uppercase}
+.pc-f .ft strong{font-size:11px;font-weight:800;color:#fff;text-transform:uppercase}
+.pcard[draggable],.lcard[draggable]{cursor:grab}

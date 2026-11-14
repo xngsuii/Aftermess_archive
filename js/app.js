@@ -54,7 +54,7 @@ function faction(f) {
     <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${(f.units || []).length} UNITS ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
-      <div class="tg-b">${fmt(u.body)}</div></article>`).join("")}</div>
+      <div class="tg-b"><div>${fmt(u.body)}</div></div></article>`).join("")}</div>
     ${(f.units || []).length ? "" : `<p class="empty">등록된 조직이 없습니다.</p>`}
     ${chron}
   </section>`;
@@ -62,13 +62,16 @@ function faction(f) {
 function people() {
   const list = facChars(), f = S.factions[S.fac], led = S.fac === "ledger";
   const none = `<p class="empty">등록된 캐릭터가 없습니다.</p>`;
-  const lcard = (c, i) => `<article class="lcard ${c.id === S.openChar ? "sel" : ""}" data-id="${c.id}" data-a="char:${c.id}">
+  const drag = S.user ? 'draggable="true"' : "";
+  const info = c => !c.gender || (!c.gender.includes("·") && (c.height || c.nation)) ? [c.gender, c.height, c.nation].filter(Boolean).join(" · ") : c.gender;
+  const lcard = (c, i) => `<article ${drag} class="lcard ${c.id === S.openChar ? "sel" : ""}" data-id="${c.id}" data-a="char:${c.id}">
       <span class="no">NPC ${String(i + 1).padStart(2, "0")}</span><div class="lc-img" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}></div>
       <div class="lc-t"><h4>${esc(c.name)}</h4><p class="meta"><span><small>AGE</small>${esc(c.age)}</span><span><small>HEIGHT</small>${esc(c.height)}</span><span><small>AFFIL.</small>${esc(c.role)}</span></p>
       ${c.brief ? `<div class="brief">${inl(c.brief)}</div>` : ""}</div></article>`;
-  const pcard = c => `<div class="pcard ${c.id === S.openChar ? "flip" : ""}" data-id="${c.id}" data-a="char:${c.id}"><div class="pc-in">
-      <div class="pc-f"><b>${esc(c.num)}</b>${SIL}</div>
-      <div class="pc-b" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}><b>${esc(c.name)}</b><i></i><span>${esc([c.gender, c.height, c.nation].filter(Boolean).join(" · "))}</span><span>${esc(c.role)}</span></div>
+  const pcard = c => `<div ${drag} class="pcard ${c.id === S.openChar ? "flip" : ""}" data-id="${c.id}" data-a="char:${c.id}"><div class="pc-in">
+      <div class="pc-f ${c.front ? "img" : ""}" data-pos="char|${c.id}|frontPos" ${bgAttr(c.front, c.frontPos)}>${S.fac === "ww" ? `<b>${esc(c.cardNo || c.num)}</b>` : ""}${c.front ? "" : SIL}
+        ${S.fac === "milgram" ? `<div class="ft"><small>${esc(c.frontSub)}</small><strong>${esc(c.frontMain)}</strong></div>` : ""}</div>
+      <div class="pc-b" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}><b>${esc(c.name)}</b><i></i><span>${esc(info(c))}</span><span>${esc(c.role)}</span></div>
     </div></div>`;
   const block = cs => led ? cs.map(lcard).join("") : `<div class="pgrid">${cs.map(pcard).join("")}</div>`;
   const head = (name, en, n) => `<div class="grp"><b>${esc(name)}</b><small>${esc(en)}</small><i></i><span>${String(n).padStart(2, "0")}</span></div>`;
@@ -80,7 +83,7 @@ function people() {
       + (rest.length ? head("미분류", "", rest.length) + block(rest) : "");
   } else body = list.length ? block(list) : none;
   return `<section id="people" class="sec wrap">
-    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람</small></div><div class="r">${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
+    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
     ${body}
     <div id="file"></div></section>`;
 }
@@ -132,16 +135,20 @@ const T = (k, label, ph) => ({ k, label, ph });
 const A = (k, label) => ({ k, label, type: "area" });
 const facForm = (title, schema) => openForm({ title, schema, data: S.factions[S.fac], onSave: async v => { await saveFaction(S.fac, v); render(); } });
 const charSchema = () => {
-  const gs = (S.factions[S.fac].groups || []).filter(g => g.name);
+  const fac = S.fac, led = fac === "ledger";
+  const gs = (S.factions[fac].groups || []).filter(g => g.name);
+  const posHint = "저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다.";
   return [
     { type: "head", label: "목록 카드" },
     T("name", "이름 (카드에 표시)", "SEVEN"),
     ...(gs.length ? [{ k: "group", label: "그룹", type: "select", options: [["", "(미분류)"], ...gs.map(g => [g.name, g.name])] }] : []),
-    { k: "order", label: "정렬 순서 (숫자, 작을수록 앞)" },
-    { k: "thumb", label: "카드 이미지", type: "inline", max: S.fac === "ledger" ? 960 : 480, limit: S.fac === "ledger" ? 160000 : 90000, hint: "저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." },
-    T("gender", "성별 (카드 뒷면)", "Male"),
-    T("role", "직무 · 소속 (카드에 표시)", "Entry-Fragger"),
-    { k: "brief", label: "한 줄 설명 (LEDGER 카드에 표시)", type: "area" },
+    ...(fac === "ww" ? [T("cardNo", "NUMBER (카드 앞면 좌상단)", "07")] : []),
+    ...(fac === "milgram" ? [T("frontSub", "소속 (카드 앞면 작은 글)", "MAIN ELEMENT"), T("frontMain", "DIV (카드 앞면 굵은 글)", "HIGH COMMAND")] : []),
+    ...(led ? [] : [{ k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. " + posHint }]),
+    { k: "thumb", label: led ? "카드 이미지" : "카드 뒷면 이미지", type: "inline", max: led ? 960 : 480, limit: led ? 160000 : 90000, hint: posHint },
+    ...(led ? [] : [T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG")]),
+    T("role", led ? "소속 (카드에 표시)" : "직무 (카드 뒷면)", led ? "현장운영국 국장 · D-2 Director" : "Entry-Fragger"),
+    ...(led ? [{ k: "brief", label: "한 줄 설명 (카드에 표시)", type: "area" }] : []),
     ...PROFILE_FIELDS];
 };
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
@@ -165,7 +172,7 @@ const EDIT = {
   funits: () => facForm("조직 구성", [T("unitsTitle", "섹션 제목", "Squad"), T("unitsSub", "설명"), { k: "units", label: "조직", type: "list", item: "조직", fields: [T("code", "코드", "SQD. 01"), T("tag", "우측 태그", "ASSAULT"), T("name", "이름", "강습타격대"), T("sub", "부가 설명"), { k: "img", label: "이미지", type: "img" }, A("body", "펼쳤을 때 내용")] }]),
   fchron: () => facForm("Chronicle", [T("chronTitle", "섹션 제목"), T("chronSub", "설명", "주요 작전 연표 · 2071 — 2080"), { k: "chron", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2071. 11. 09"), T("tag", "우측 태그", "FIRST RECORD"), T("title", "제목"), A("body", "내용")] }]),
   newchar: () => {
-    const c = { id: newId("c"), faction: S.fac, order: String(facChars().length), affil: [], tracks: [], assets: [] };
+    const c = { id: newId("c"), faction: S.fac, order: facChars().reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1, affil: [], tracks: [], assets: [] };
     openForm({ title: `캐릭터 추가 · ${S.factions[S.fac].name}`, schema: charSchema(), data: c, onSave: async v => { await saveChar(v); S.openChar = v.id; S.tab = "profile"; render(); } });
   },
   char: id => {
@@ -243,6 +250,7 @@ const themeLabel = () => document.getElementById("btn-theme").textContent = docu
 themeLabel();
 onAuthStateChanged(auth, u => {
   S.user = u; document.body.classList.toggle("admin", !!u);
+  if (S.site) render();
   document.getElementById("btn-login").textContent = u ? "Logout" : "Login";
 });
 
@@ -323,7 +331,7 @@ function startAdjust(box) {
     : (t.tagName === "IMG" ? cs.objectPosition : cs.backgroundPosition).split(" ").map(parseFloat);
   adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60 };
   document.body.classList.add("adjusting"); box.classList.add("adj-on");
-  box.closest(".pcard")?.classList.add("flip");
+  box.closest(".pcard")?.classList.toggle("flip", box.classList.contains("pc-b"));
   getSelection()?.removeAllRanges();
   adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : "드래그해서 이미지 위치 조정"}</span><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
   adjBar.classList.add("on");
@@ -371,3 +379,33 @@ addEventListener("wheel", e => {
   if (!adj?.move) return;
   e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, 100); applyAdj();
 }, { passive: false });
+
+// ---------- 캐릭터 순서: 로그인 상태에서 카드를 끌어다 놓기 ----------
+let dragId = null;
+document.addEventListener("dragstart", e => {
+  const el = e.target.closest?.(".pcard,.lcard");
+  if (adj || !el || !S.user) return;
+  dragId = el.dataset.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dragId);
+});
+document.addEventListener("dragover", e => { if (dragId && e.target.closest(".pcard,.lcard")) e.preventDefault(); });
+document.addEventListener("dragend", () => dragId = null);
+document.addEventListener("drop", async e => {
+  const el = e.target.closest(".pcard,.lcard");
+  if (!dragId || !el) return;
+  e.preventDefault();
+  const from = dragId; dragId = null;
+  if (el.dataset.id === from) return;
+  const list = facChars(), a = list.find(c => c.id === from), b = list.find(c => c.id === el.dataset.id);
+  if (!a || !b) return;
+  const j = list.indexOf(b);
+  list.splice(list.indexOf(a), 1); list.splice(j, 0, a);
+  // 놓은 자리의 카드와 같은 그룹으로 옮기고, 순서를 0부터 다시 매긴다
+  const changed = [];
+  list.forEach((c, n) => {
+    const g = c === a ? (b.group || "") : (c.group || "");
+    if (String(c.order) !== String(n) || (c.group || "") !== g) changed.push({ ...c, order: n, group: g });
+  });
+  try { for (const c of changed) await saveChar(c); toast("순서를 저장했습니다"); }
+  catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); }
+  render();
+});
