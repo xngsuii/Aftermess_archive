@@ -19,17 +19,17 @@ const DEF_SITE = {
 const F = (name, short, sub, mapTitle, unitsTitle) => ({
   name, short, sub, quote: "", quoteKo: "", quoteSrc: "", tagline: "", est: "", banner: "", summary: "",
   overview: [], mapTitle, mapSub: "", mapImg: "", unitsTitle, unitsSub: "", units: [],
-  chronTitle: "Chronicle", chronSub: "", chron: []
+  chronTitle: "Chronicle", chronSub: "", chron: [], groups: []
 });
 const DEF_FAC = {
   ww: F("WORLD'S WORST", "W.W", "// ledger-certified PMC", "Facility", "Squad"),
-  milgram: F("MILGRAM", "MILGRAM", "// classified", "Territory", "Squad"),
+  milgram: { ...F("MILGRAM", "MILGRAM", "// classified", "Territory", "Squad"), groups: [{ name: "본대", en: "MAIN ELEMENT" }, { name: "분견대", en: "1ST DETACHMENT" }] },
   ledger: F("LEDGER", "LEDGER", "// classified", "Floor Plan", "Directorate")
 };
 
 export async function loadAll(step) {
   const site = await getDoc(doc(db, "site", "main")); step();
-  S.site = { ...DEF_SITE, ...(site.exists() ? site.data() : {}) };
+  S.site = { ...DEF_SITE, ...(site.exists() ? site.data() : {}) }; normSite();
   const fs = await getDocs(collection(db, "factions")); step();
   const got = {}; fs.forEach(d => got[d.id] = d.data());
   for (const k of FAC) S.factions[k] = { ...DEF_FAC[k], ...(got[k] || {}) };
@@ -40,8 +40,16 @@ export async function loadAll(step) {
   S.memos = ms.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0));
 }
 export function useDefaults() {
-  S.site = S.site || { ...DEF_SITE };
+  S.site = S.site || { ...DEF_SITE }; normSite();
   for (const k of FAC) S.factions[k] = S.factions[k] || { ...DEF_FAC[k] };
+}
+// 시놉시스를 연도별 세 칸 구조로 맞춘다 (예전 저장분은 옮겨 담는다)
+function normSite() {
+  const s = S.site;
+  if (!Array.isArray(s.syn)) s.syn = [
+    { year: "2030", label: "핵전쟁 발발", body: s.synTitle || "" },
+    { year: "— 50y", label: "멸망 위기", body: s.synBody || "" },
+    { year: "2080", label: "현재 · 애프터메스", body: "" }];
 }
 function sortChars() { S.chars.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)); }
 

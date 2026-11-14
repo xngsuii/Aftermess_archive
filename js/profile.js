@@ -3,8 +3,7 @@ import { esc, fmt, imgAttr } from "./ui.js";
 
 export const PROFILE_FIELDS = [
   { type: "head", label: "기본 정보" },
-  { k: "num", label: "번호 (크게 표시)", ph: "7" },
-  { k: "name", label: "이름", ph: "SEVEN" },
+  { k: "num", label: "코드네임", ph: "7" },
   { k: "serial", label: "일련번호", ph: "2080  004" },
   { k: "clearance", label: "보안 등급 (우측 상단)", ph: "Seven" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
@@ -50,9 +49,9 @@ export function renderProfile(c, opt = {}) {
     + sec("Record", "이력 · ETC", fmt(c.record));
   return `<div class="pf">
     <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span>${c.clearance ? "Clearance =<br>" + esc(c.clearance) : ""}</span></div>
-    <div class="pf-hero">${c.mainImg ? `<img ${imgAttr(c.mainImg)} alt="">` : ""}
+    <div class="pf-hero">${c.mainImg ? `<img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} ${c.mainImgPos ? `style="object-position:${esc(c.mainImgPos)}"` : ""} alt="">` : ""}
       <div class="pf-id">${c.serial ? `<small>serial no. ${esc(c.serial)}</small>` : ""}
-        <h1>${esc(c.num || c.name || "—")}${c.num && c.name ? `<span>${esc(c.name)}</span>` : ""}</h1>
+        <h1>${esc(c.num || c.name || "—")}</h1>
         <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${esc(c.tagline)}</strong>` : ""}${fmt(c.intro)}
       </div>
     </div>

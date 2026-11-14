@@ -2,7 +2,7 @@ import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
-import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm } from "./ui.js";
+import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm, why } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, toggleTrack } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 
@@ -13,31 +13,35 @@ const facChars = () => S.chars.filter(c => c.faction === S.fac);
 
 // ---------- 화면 ----------
 function hero(s) {
-  return `<section id="top" class="hero"><div class="hero-bg" ${bgAttr(s.heroImg)}></div>${ed("hero", "메인 편집")}
+  return `<section id="top" class="hero" data-pos="site|heroImgPos"><div class="hero-bg pos-t" ${bgAttr(s.heroImg, s.heroImgPos)}></div>${ed("hero", "메인 편집")}
     <p class="kicker">${inl(s.kicker)}</p>
-    <div class="hero-in wrap"><h1>${esc(s.title)}</h1></div></section>`;
+    ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%">` : ""}</section>`;
 }
 function world(s) {
   const orgs = FAC.map((k, i) => { const f = S.factions[k]; return `
     <article class="org tg" data-faction="${k}">
       <button class="org-h tg-h" data-a="tog"><b>${esc(f.short || f.name)}</b><small>ORG. 0${i + 1}</small><span class="plus">+</span></button>
-      <div class="tg-b"><div class="org-ban" ${bgAttr(f.banner)}><small>${esc(f.tagline)}</small><strong>${esc(f.name)}</strong><span>${esc(f.est)}</span></div>
+      <div class="tg-b"><div class="org-ban" data-pos="fac|${k}|bannerPos" ${bgAttr(f.banner, f.bannerPos)}><small>${esc(f.tagline)}</small><strong>${esc(f.name)}</strong><span>${esc(f.est)}</span></div>
         <div class="org-txt">${fmt(f.summary)}<button class="org-go" data-a="go:${k}">진영 페이지 보기 →</button> ${ed("forg:" + k)}</div></div>
     </article>`; }).join("");
   const eras = (s.eras || []).map((e, i) => `
     <div class="era ${i % 2 ? "r" : ""}"><div class="era-l"><h4>${esc(e.name)}<small>${esc(e.en)} · ${esc(e.range)}</small></h4>
       <ul>${(e.events || []).map(v => `<li><time>${esc(v.date)}</time><b>${esc(v.title)}</b>${v.desc ? `<p>${inl(v.desc)}</p>` : ""}</li>`).join("")}</ul></div>
-      <div class="era-img" ${bgAttr(e.img)}></div></div>`).join("");
+      <div class="era-img" data-pos="site|eras.${i}.imgPos" ${bgAttr(e.img, e.imgPos)}></div></div>`).join("");
+  const syn = (s.syn || []).map(r => `<div class="syn-row ${/^[—–-]/.test(r.year || "") ? "gap" : ""}"><div class="syn-y"><b>${esc(r.year)}</b><small>${esc(r.label)}</small></div><div class="syn-t">${fmt(r.body)}</div></div>`).join("");
   return `<section id="world" class="sec wrap">
     <div class="sec-h"><div><h2>Synopsis</h2></div><div class="r">시놉시스 ${ed("syn")}</div></div>
-    <div class="syn"><ol><li>2030<small>핵전쟁 발발</small></li><li class="gap">— 50y<small>멸망 위기</small></li><li>2080<small>현재 · 애프터메스</small></li></ol>
-      <div><h3>${esc(s.synTitle)}</h3>${fmt(s.synBody) || `<p class="empty">시놉시스 본문을 입력하세요.</p>`}</div></div>
+    <div class="syn">${syn}</div>
     <div class="sec-h"><div><h2>Timeline</h2><small>세계관 연표 · 2030 — 2080</small></div><div class="r">${ed("timeline")}</div></div>
     ${eras}
     <div class="orgs">${orgs}</div></section>`;
 }
 function faction(f) {
   const k = S.fac;
+  const chron = k === "ww" ? "" : `<div class="sec-h"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
+      <div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="togall">+</button> ${ed("fchron")}</div></div>
+    <div class="chrs">${(f.chron || []).map(c => `<article class="chr tg"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><h4>${esc(c.title)}</h4></button>
+      <div class="tg-b">${fmt(c.body)}</div></article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>`;
   return `<section id="faction" class="sec wrap">
     <nav class="fsel">${FAC.map(x => `<button data-faction="${x}" class="${x === k ? "on" : ""}" data-a="fac:${x}">${esc(S.factions[x].short || S.factions[x].name)}</button>`).join("")}</nav>
     <p class="kicker">AFTERMESS<br>2080 NEW ERA</p>
@@ -46,37 +50,43 @@ function faction(f) {
     <div class="sec-h"><div><h2>Overview</h2></div><div class="r">조직 개요 ${ed("fov")}</div></div>
     ${(f.overview || []).map(o => `<div class="ov"><h4>${esc(o.title)}<small>${esc(o.en)}</small></h4>${fmt(o.body)}</div>`).join("") || `<p class="empty">개요 항목이 없습니다.</p>`}
     <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${ed("fmap")}</div></div>
-    <div class="map" ${bgAttr(f.mapImg)}>${f.mapImg ? "" : "MAP · 이미지 준비 중"}</div>
+    <div class="map" data-pos="fac|${k}|mapImgPos" ${bgAttr(f.mapImg, f.mapImgPos)}>${f.mapImg ? "" : "MAP · 이미지 준비 중"}</div>
     <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${(f.units || []).length} UNITS ${ed("funits")}</div></div>
-    <div class="units">${(f.units || []).map(u => `<article class="unit tg"><button class="unit-top tg-h" data-a="tog"><div class="unit-img" ${bgAttr(u.img)}></div>
-      <span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
+    <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
+      <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
       <div class="tg-b">${fmt(u.body)}</div></article>`).join("")}</div>
     ${(f.units || []).length ? "" : `<p class="empty">등록된 조직이 없습니다.</p>`}
-    <div class="sec-h"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
-      <div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="togall">+</button> ${ed("fchron")}</div></div>
-    <div class="chrs">${(f.chron || []).map(c => `<article class="chr tg"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><h4>${esc(c.title)}</h4></button>
-      <div class="tg-b">${fmt(c.body)}</div></article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>
+    ${chron}
   </section>`;
 }
 function people() {
-  const list = facChars();
-  const cards = S.fac === "ledger"
-    ? list.map((c, i) => `<article class="lcard ${c.id === S.openChar ? "sel" : ""}" data-id="${c.id}" data-a="char:${c.id}">
-        <span class="no">NPC ${String(i + 1).padStart(2, "0")}</span><div class="lc-img" ${bgAttr(c.thumb)}></div>
-        <div class="lc-t"><h4>${esc(c.name)}</h4><p class="meta"><span><small>AGE</small>${esc(c.age)}</span><span><small>HEIGHT</small>${esc(c.height)}</span><span><small>AFFIL.</small>${esc(c.role)}</span></p>
-        ${c.brief ? `<div class="brief">${inl(c.brief)}</div>` : ""}</div></article>`).join("")
-    : `<div class="pgrid">${list.map(c => `<div class="pcard ${c.id === S.openChar ? "flip" : ""}" data-id="${c.id}" data-a="char:${c.id}"><div class="pc-in">
-        <div class="pc-f"><b>${esc(c.num)}</b>${SIL}</div>
-        <div class="pc-b" ${bgAttr(c.thumb)}><b>${esc(c.name)}</b><i></i><span>${esc([c.gender, c.height, c.nation].filter(Boolean).join(" · "))}</span><span>${esc(c.role)}</span></div>
-      </div></div>`).join("")}</div>`;
+  const list = facChars(), f = S.factions[S.fac], led = S.fac === "ledger";
+  const none = `<p class="empty">등록된 캐릭터가 없습니다.</p>`;
+  const lcard = (c, i) => `<article class="lcard ${c.id === S.openChar ? "sel" : ""}" data-id="${c.id}" data-a="char:${c.id}">
+      <span class="no">NPC ${String(i + 1).padStart(2, "0")}</span><div class="lc-img" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}></div>
+      <div class="lc-t"><h4>${esc(c.name)}</h4><p class="meta"><span><small>AGE</small>${esc(c.age)}</span><span><small>HEIGHT</small>${esc(c.height)}</span><span><small>AFFIL.</small>${esc(c.role)}</span></p>
+      ${c.brief ? `<div class="brief">${inl(c.brief)}</div>` : ""}</div></article>`;
+  const pcard = c => `<div class="pcard ${c.id === S.openChar ? "flip" : ""}" data-id="${c.id}" data-a="char:${c.id}"><div class="pc-in">
+      <div class="pc-f"><b>${esc(c.num)}</b>${SIL}</div>
+      <div class="pc-b" data-pos="char|${c.id}|thumbPos" ${bgAttr(c.thumb, c.thumbPos)}><b>${esc(c.name)}</b><i></i><span>${esc([c.gender, c.height, c.nation].filter(Boolean).join(" · "))}</span><span>${esc(c.role)}</span></div>
+    </div></div>`;
+  const block = cs => led ? cs.map(lcard).join("") : `<div class="pgrid">${cs.map(pcard).join("")}</div>`;
+  const head = (name, en, n) => `<div class="grp"><b>${esc(name)}</b><small>${esc(en)}</small><i></i><span>${String(n).padStart(2, "0")}</span></div>`;
+  const groups = (f.groups || []).filter(g => g.name);
+  let body;
+  if (groups.length) {
+    const names = groups.map(g => g.name), rest = list.filter(c => !names.includes(c.group));
+    body = groups.map(g => { const cs = list.filter(c => c.group === g.name); return head(g.name, g.en, cs.length) + (cs.length ? block(cs) : none); }).join("")
+      + (rest.length ? head("미분류", "", rest.length) + block(rest) : "");
+  } else body = list.length ? block(list) : none;
   return `<section id="people" class="sec wrap">
-    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람</small></div><div class="r">${ed("newchar", "+ 캐릭터 추가")}</div></div>
-    ${list.length ? cards : `<p class="empty">등록된 캐릭터가 없습니다.</p>`}
+    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람</small></div><div class="r">${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
+    ${body}
     <div id="file"></div></section>`;
 }
 const memoTags = m => {
   const c = m.charId && S.chars.find(x => x.id === m.charId);
-  return [...new Set([m.charId ? (c ? c.name : null) : "세계관", ...String(m.tags || "").split(",").map(t => t.trim())].filter(Boolean))];
+  return [...new Set([m.charId ? (c ? (c.name || c.num) : null) : "세계관", ...String(m.tags || "").split(",").map(t => t.trim())].filter(Boolean))];
 };
 const memoHtml = m => `<article class="memo"><div class="tags">${memoTags(m).map(t => `<span>#${esc(t)}</span>`).join("")} ${ed("memo:" + m.id)}</div>
   ${m.title ? `<h4>${esc(m.title)}</h4>` : ""}${fmt(m.body)}</article>`;
@@ -100,8 +110,8 @@ function fileHtml(c) {
   } else if (S.tab === "memo") {
     const ms = S.memos.filter(m => m.charId === c.id);
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다.</p>`}<p style="margin-top:14px">${ed("newmemo:" + c.id, "+ 메모 추가")}</p></div>`;
-  } else body = renderProfile(c);
-  return `<div class="file"><div class="tabs">${tab("profile", "프로필")}${tab("assets", "에셋")}${tab("memo", "메모")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
+  } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos` });
+  return `<div class="file"><div class="tabs">${tab("profile", esc(c.num || c.name || "PROFILE"))}${tab("assets", "ASSET")}${tab("memo", "MEMO")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
 }
 function drawFile(scroll) {
   const box = document.getElementById("file"); if (!box) return;
@@ -121,14 +131,19 @@ function render() {
 const T = (k, label, ph) => ({ k, label, ph });
 const A = (k, label) => ({ k, label, type: "area" });
 const facForm = (title, schema) => openForm({ title, schema, data: S.factions[S.fac], onSave: async v => { await saveFaction(S.fac, v); render(); } });
-const charSchema = () => [
-  { type: "head", label: "목록 카드" },
-  { k: "order", label: "정렬 순서 (숫자, 작을수록 앞)" },
-  { k: "thumb", label: "카드 이미지", type: "inline", max: S.fac === "ledger" ? 960 : 480, limit: S.fac === "ledger" ? 160000 : 90000 },
-  T("gender", "성별 (카드 뒷면)", "Male"),
-  T("role", "직무 · 소속 (카드에 표시)", "Entry-Fragger"),
-  { k: "brief", label: "한 줄 설명 (LEDGER 카드에 표시)", type: "area" },
-  ...PROFILE_FIELDS];
+const charSchema = () => {
+  const gs = (S.factions[S.fac].groups || []).filter(g => g.name);
+  return [
+    { type: "head", label: "목록 카드" },
+    T("name", "이름 (카드에 표시)", "SEVEN"),
+    ...(gs.length ? [{ k: "group", label: "그룹", type: "select", options: [["", "(미분류)"], ...gs.map(g => [g.name, g.name])] }] : []),
+    { k: "order", label: "정렬 순서 (숫자, 작을수록 앞)" },
+    { k: "thumb", label: "카드 이미지", type: "inline", max: S.fac === "ledger" ? 960 : 480, limit: S.fac === "ledger" ? 160000 : 90000, hint: "저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." },
+    T("gender", "성별 (카드 뒷면)", "Male"),
+    T("role", "직무 · 소속 (카드에 표시)", "Entry-Fragger"),
+    { k: "brief", label: "한 줄 설명 (LEDGER 카드에 표시)", type: "area" },
+    ...PROFILE_FIELDS];
+};
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
   { k: "charId", label: "분류", type: "select", options: [["", "세계관 (캐릭터 없음)"], ...S.chars.map(c => [c.id, `캐릭터: ${c.name || c.num || "이름 없음"}`])] },
   { k: "tags", label: "추가 태그 (쉼표로 구분)", ph: "설정, 비하인드", hint: "캐릭터를 고르면 캐릭터 이름 태그가, 아니면 '세계관' 태그가 자동으로 붙습니다." }];
@@ -138,11 +153,12 @@ function editMemo(m, isNew) {
     onDelete: isNew ? null : async () => { await delMemo(m.id); render(); } });
 }
 const EDIT = {
-  hero: () => openForm({ title: "메인 화면", schema: [T("title", "타이틀"), { k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img" }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
-  syn: () => openForm({ title: "시놉시스", schema: [T("synTitle", "큰 문장"), A("synBody", "본문")], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
+  hero: () => openForm({ title: "메인 화면", schema: [{ k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img", hint: "저장한 뒤 사진을 더블클릭하면 위치를 조정할 수 있습니다." }, { k: "logo", label: "로고 이미지", type: "img", hint: "저장한 뒤 로고를 더블클릭하면 드래그로 위치, 휠로 크기를 조정할 수 있습니다." }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
+  syn: () => openForm({ title: "시놉시스", schema: [{ k: "syn", label: "연도별 칸", type: "list", item: "칸", fields: [T("year", "연도", "2030"), T("label", "연도 아래 작은 글", "핵전쟁 발발"), A("body", "옆에 들어갈 글")] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   timeline: () => openForm({ title: "타임라인", schema: [{ k: "eras", label: "시대", type: "list", item: "시대", fields: [T("name", "이름", "붕괴기"), T("en", "영문", "COLLAPSE"), T("range", "기간", "2030 — 2038"), { k: "img", label: "이미지", type: "img" },
     { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), T("desc", "설명 (선택)")] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   forg: k => openForm({ title: `${S.factions[k].name} · World 요약`, schema: [T("short", "짧은 이름", "W.W"), { k: "tagline", label: "좌측 상단 문구", type: "area", hint: "예: Dead Zone / Insurgent Cell" }, { k: "est", label: "설립 정보", type: "area", hint: "예: EST. 2071. 12. 25 / Volgograd, Russia" }, { k: "banner", label: "배너 이미지", type: "img" }, A("summary", "요약 설명")], data: S.factions[k], onSave: async v => { await saveFaction(k, v); render(); } }),
+  fgroups: () => facForm("캐릭터 그룹", [{ k: "groups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "본대"), T("en", "영문", "MAIN ELEMENT")] }]),
   fhead: () => facForm("진영 머리말", [T("name", "진영 이름"), T("sub", "부제", "// classified, HQ COMMANDER"), A("quote", "인용문 (영문)"), A("quoteKo", "인용문 (번역)"), T("quoteSrc", "출처", "INTERCEPT 2078 / UNVERIFIED")]),
   fov: () => facForm("Overview", [{ k: "overview", label: "항목", type: "list", fields: [T("title", "제목", "연혁"), T("en", "영문", "ORIGIN"), A("body", "내용")] }]),
   fmap: () => facForm("지도 · 도면", [T("mapTitle", "섹션 제목", "Territory"), T("mapSub", "설명"), { k: "mapImg", label: "지도 이미지", type: "img" }]),
@@ -253,7 +269,7 @@ let goal = 6, cur = 0;
 // ---------- 메인 화면 넘김: 메인에서 아래로 굴리면 한 번에 다음 화면으로 넘어간다 ----------
 let sliding = false;
 const heroH = () => document.getElementById("top")?.offsetHeight || innerHeight;
-const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
+const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || document.body.classList.contains("adjusting") || !document.getElementById("loader").classList.contains("done");
 function slideTo(to) {
   sliding = true;
   const from = scrollY, t0 = performance.now(), dur = 550;
@@ -288,4 +304,70 @@ addEventListener("touchmove", e => {
     if (e.cancelable) e.preventDefault();
     if (Math.abs(d) > 30 && pageTurn(d)) ty = null;
   }
+}, { passive: false });
+
+// ---------- 이미지 위치 조정: 로그인 상태에서 이미지를 더블클릭 ----------
+let adj = null, drag = null;
+const adjBar = document.getElementById("adj");
+const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
+function applyAdj() {
+  const { t, move, x, y, w } = adj;
+  if (move) { t.style.left = x + "%"; t.style.top = y + "%"; t.style.width = w + "%"; }
+  else if (t.tagName === "IMG") t.style.objectPosition = `${x}% ${y}%`;
+  else t.style.backgroundPosition = `${x}% ${y}%`;
+}
+function startAdjust(box) {
+  const move = box.classList.contains("hero-logo");
+  const t = box.querySelector(":scope > .pos-t") || box, cs = getComputedStyle(t);
+  const cur = move ? [parseFloat(t.style.left), parseFloat(t.style.top)]
+    : (t.tagName === "IMG" ? cs.objectPosition : cs.backgroundPosition).split(" ").map(parseFloat);
+  adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60 };
+  document.body.classList.add("adjusting"); box.classList.add("adj-on");
+  box.closest(".pcard")?.classList.add("flip");
+  getSelection()?.removeAllRanges();
+  adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : "드래그해서 이미지 위치 조정"}</span><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
+  adjBar.classList.add("on");
+}
+async function endAdjust(save) {
+  const a = adj; adj = null; drag = null;
+  document.body.classList.remove("adjusting"); a.box.classList.remove("adj-on"); adjBar.classList.remove("on");
+  if (save) {
+    const [kind, p1, p2] = a.path.split("|");
+    const src = kind === "site" ? S.site : kind === "fac" ? S.factions[p1] : S.chars.find(c => c.id === p1);
+    const v = structuredClone(src), key = kind === "site" ? p1 : p2;
+    if (a.move) { v.logoX = +a.x.toFixed(1); v.logoY = +a.y.toFixed(1); v.logoW = +a.w.toFixed(1); }
+    else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`; }
+    try { await (kind === "site" ? saveSite(v) : kind === "fac" ? saveFaction(p1, v) : saveChar(v)); toast("위치를 저장했습니다"); }
+    catch (e) { console.error(e); toast("저장하지 못했습니다. " + why(e)); }
+  }
+  render();
+}
+document.addEventListener("dblclick", e => {
+  if (!S.user || adj) return;
+  const box = e.target.closest("[data-pos]");
+  if (box) { e.preventDefault(); startAdjust(box); }
+});
+document.addEventListener("pointerdown", e => {
+  if (!adj || e.target.closest("#adj") || !adj.box.contains(e.target)) return;
+  e.preventDefault(); drag = { px: e.clientX, py: e.clientY };
+}, true);
+document.addEventListener("pointermove", e => {
+  if (!adj || !drag) return;
+  const r = (adj.move ? adj.box.parentElement : adj.box).getBoundingClientRect();
+  const dx = (e.clientX - drag.px) / r.width * 100, dy = (e.clientY - drag.py) / r.height * 100;
+  drag = { px: e.clientX, py: e.clientY };
+  adj.x = clamp(adj.x + (adj.move ? dx : -dx)); adj.y = clamp(adj.y + (adj.move ? dy : -dy));
+  applyAdj();
+});
+document.addEventListener("pointerup", () => drag = null);
+document.addEventListener("dragstart", e => { if (adj) e.preventDefault(); });
+document.addEventListener("click", e => {
+  if (!adj) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  const b = e.target.closest("[data-adj]");
+  if (b) endAdjust(b.dataset.adj === "save");
+}, true);
+addEventListener("wheel", e => {
+  if (!adj?.move) return;
+  e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, 100); applyAdj();
 }, { passive: false });

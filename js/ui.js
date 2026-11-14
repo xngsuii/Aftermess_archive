@@ -9,7 +9,11 @@ export const FMT_HINT = "**굵게**, __밑줄 강조__ 를 쓸 수 있고, 빈 �
 
 // 이미지: data URL이면 바로, 아니면 화면 근처에 왔을 때 Firestore에서 불러온다
 export const imgAttr = v => !v ? "" : v.startsWith("data:") ? `src="${v}"` : `data-img="${esc(v)}"`;
-export const bgAttr = v => !v ? "" : v.startsWith("data:") ? `style="background-image:url('${v}')"` : `data-img="${esc(v)}"`;
+export const bgAttr = (v, pos) => {
+  if (!v) return "";
+  const p = pos ? `background-position:${esc(pos)};` : "";
+  return v.startsWith("data:") ? `style="background-image:url('${v}');${p}"` : `data-img="${esc(v)}"${p ? ` style="${p}"` : ""}`;
+};
 const io = new IntersectionObserver(es => es.forEach(e => {
   if (!e.isIntersecting) return;
   io.unobserve(e.target); fill(e.target);
