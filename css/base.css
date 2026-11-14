@@ -1,0 +1,23 @@
+:root{
+  --bg:#070708;--bg2:#101012;--bg3:#18181b;
+  --fg:#f2f2f0;--fg2:#a8a8a4;--fg3:#6a6a67;
+  --line:rgba(255,255,255,.13);
+  --c-ww:#e5342f;--c-milgram:#2f6dff;--c-ledger:#f0b323;
+  --accent:var(--c-ww);
+  --font:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f3f2ee;--bg2:#e8e7e2;--bg3:#dddcd6;
+  --fg:#111112;--fg2:#4b4b48;--fg3:#8b8b86;
+  --line:rgba(0,0,0,.15);
+  --c-ww:#d0241f;--c-milgram:#1f55e0;--c-ledger:#b47e00;
+}
+[data-faction="ww"]{--accent:var(--c-ww)}
+[data-faction="milgram"]{--accent:var(--c-milgram)}
+[data-faction="ledger"]{--accent:var(--c-ledger)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;word-break:keep-all}
+p{margin:0 0 .9em}
+b,strong{font-weight:700;color:var(--fg)}
+u{text-decoration:none;font-weight:700;color:var(--fg);border-bottom:1.5px solid var(--accent);padding-bottom:1px}
+img{max-width:100%;display:block}
