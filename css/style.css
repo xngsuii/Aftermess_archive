@@ -479,3 +479,11 @@ body.scrolled #totop{opacity:1;pointer-events:auto}
 @media(max-width:640px){
   .hmenu{right:24px;top:17%}
 }
+/* v15: 메인 메뉴 글꼴·간격·위치 */
+.hmenu{top:26%;gap:0}
+.hmenu button{font-family:var(--font)}
+.hmenu>button{font-weight:600;letter-spacing:0;margin-bottom:clamp(12px,2.2vh,24px)}
+.hmenu>button:hover{letter-spacing:.04em}
+.hm-sub{margin:0}
+.hmenu.open .hm-sub{margin:-4px 0 clamp(12px,2.2vh,24px)}
+@media(max-width:640px){.hmenu{top:22%}}
