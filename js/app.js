@@ -124,7 +124,7 @@ function fileHtml(c) {
     const fig = x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`;
     const add = (g, txt) => `<label class="btn adm" style="cursor:pointer">${txt}<input type="file" class="asset-add" data-char="${c.id}" data-g="${esc(g)}" accept="image/*" multiple hidden></label>`;
     const sect = (g, label) => { const xs = a.filter(x => g ? x.g === g : !names.includes(x.g));
-      return !xs.length && !S.user ? "" : `<div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div>`; };
+      return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
     body = `<div class="file-pad">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
       ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
       <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가 (여러 장 선택 가능)")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;

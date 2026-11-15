@@ -78,7 +78,7 @@ async function lbShow() {
 export function lightbox(ids, i = 0, opt = {}) {
   lbIds = [].concat(ids); lbI = i; lbOpt = opt;
   const lb = document.getElementById("lb"), many = lbIds.length > 1;
-  lb.innerHTML = `${many ? '<button class="lb-nav l" data-lb="-1">‹</button>' : ""}<img alt="">${many ? '<button class="lb-nav r" data-lb="1">›</button><span class="lb-n"></span>' : ""}<div class="lb-cap"></div>`;
+  lb.innerHTML = `${many ? '<button class="lb-nav l" data-lb="-1">‹</button>' : ""}<div class="lb-fig"><img alt=""><div class="lb-cap"></div></div>${many ? '<button class="lb-nav r" data-lb="1">›</button><span class="lb-n"></span>' : ""}`;
   lb.classList.add("on");
   lbShow();
 }

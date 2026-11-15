@@ -439,3 +439,11 @@ body.admin .pt{cursor:grab;touch-action:none}
 .file .file-pad>.grp:first-child{margin-top:0}
 .grp .btn{padding:3px 9px;font-size:10px}
 body.admin .agrid[data-agroup]:empty{min-height:64px;border:1px dashed var(--line)}
+
+/* v11: 설명 띠를 이미지 위에 겹침, 로그인 전용 버튼 표시 */
+body.admin label.adm{display:inline-block}
+body.admin div.adm{display:block}
+.agsec:first-child .grp{margin-top:0}
+.lb-fig{position:relative;line-height:0;max-width:100%}
+#lb .lb-fig img{max-width:calc(100vw - 40px);max-height:90vh}
+.lb-cap{position:absolute;padding:34px 16px 12px;line-height:1.5;font-size:13px;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,.4) 55%,transparent)}
