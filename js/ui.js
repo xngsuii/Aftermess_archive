@@ -2,9 +2,9 @@
 import { getImage, saveImage, delImage, compress, collectIds, thumbId } from "./store.js";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-// **굵게**, __밑줄 강조__
-export const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/__(.+?)__/g, "<u>$1</u>")
-  .replace(/\{([gwr]):(.+?)\}/g, '<span class="tc-$1">$2</span>').replace(/\n/g, "<br>");
+// **굵게**, __밑줄 강조__, {i:기울임}, {g:회색} {w:흰색} {r:진영 색}. 중괄호 표시는 한 번 겹쳐 쓸 수 있다.
+const mark = s => s.replace(/\{([gwri]):([^{}]+)\}/g, (m, k, t) => k === "i" ? `<em class="ti">${t}</em>` : `<span class="tc-${k}">${t}</span>`);
+export const inl = s => mark(mark(esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/__(.+?)__/g, "<u>$1</u>"))).replace(/\n/g, "<br>");
 // Enter(줄바꿈)마다 문단. 줄 끝의 ↵ (Shift+Enter)는 문단을 나누지 않는 줄바꿈.
 // 빈 줄을 두면 간격이 더 벌어지고, > 로 시작하는 줄은 인용구.
 export const fmt = s => {
@@ -107,9 +107,10 @@ function formatBar(input, onChange, withQuote) {
     const block = v.slice(s, e).split("\n").map(l => l.startsWith(">") ? l : "> " + l).join("\n");
     set(v.slice(0, s) + block + v.slice(e), s, s + block.length);
   };
-  const mk = (txt, title, fn) => { const b = h("button", "", txt); b.type = "button"; b.title = title; b.onclick = fn; bar.append(b); };
-  mk("B", "굵게", () => wrap("**"));
-  mk("U", "밑줄 강조", () => wrap("__"));
+  const mk = (txt, title, fn, cls) => { const b = h("button", cls || "", txt); b.type = "button"; b.title = title; b.onclick = fn; bar.append(b); };
+  mk("B", "굵게", () => wrap("**"), "fb-b");
+  mk("I", "기울임", () => wrap("{i:", "}"), "fb-i");
+  mk("U", "밑줄 강조", () => wrap("__"), "fb-u");
   mk("회색", "글자색: 회색", () => wrap("{g:", "}"));
   mk("흰색", "글자색: 흰색", () => wrap("{w:", "}"));
   mk("진영 색", "글자색: 진영 색 (W.W 빨강 / MILGRAM 파랑 / LEDGER 노랑)", () => wrap("{r:", "}"));
@@ -163,6 +164,13 @@ export function buildFields(schema, obj, ctx = {}) {
         box.append(add);
       };
       draw(); w.append(box);
+    } else if (f.type === "range") {
+      const row = h("div", "rng"), i = h("input"), out = h("span");
+      i.type = "range"; i.min = f.min; i.max = f.max; i.step = f.step; i.dataset.k = f.k;
+      const show = () => out.textContent = Math.round(i.value * 100) + "%";
+      i.value = obj[f.k] ?? f.def; show();
+      i.oninput = () => { obj[f.k] = +i.value; show(); ch(); };
+      row.append(i, out); w.append(row);
     } else if (f.type === "imgs") {
       // 사진 여러 장: 고르면 바로 올라가고, ✕로 빼고, ◀ ▶로 순서를 바꾼다
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];

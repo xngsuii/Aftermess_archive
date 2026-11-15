@@ -10,6 +10,7 @@ export const PROFILE_FIELDS = [
   { k: "clearance", label: "보안 등급 (상단 세 번째, Clearance = 아래)", ph: "Seven" },
   { k: "topRight", label: "상단 맨 오른쪽 글 (두 줄까지)", type: "area", plain: true, ph: "Operational Detachment\nMILGRAM" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
+  { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 위치를 옮길 수 있습니다." },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
@@ -44,7 +45,13 @@ export const PROFILE_FIELDS = [
 
 export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1] || "";
 
-const sec = (title, sub, body) => body ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body}</section>` : "";
+// ph: 내용이 비었을 때 틀만 보여 줄 자리 표시 (편집기 미리보기에서만 넘긴다)
+const sec = (title, sub, body, ph) => body || ph ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body || ph}</section>` : "";
+// 상단 이미지의 위치와 확대
+export const mainImgStyle = c => {
+  const pos = c.mainImgPos || "50% 0%", z = Math.max(1, +c.mainImgZoom || 1);
+  return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:scale(${z})`;
+};
 
 function secret(c, opt) {
   if (!c.useSecret) return "";
@@ -67,9 +74,11 @@ function secret(c, opt) {
 export function renderProfile(c, opt = {}) {
   const affil = (c.affil || []).filter(r => r.k || r.v);
   const tracks = (c.tracks || []).filter(t => t.title || t.song);
-  const chip = (cls, l, v, dot) => v ? `<span class="pf-chip ${cls}">${dot ? "<i></i>" : ""}${l}<b>${esc(v)}</b></span>` : "";
+  const F = !!opt.frame, ph = t => F ? `<p class="pf-phx">${t}</p>` : "";
+  const chip = (cls, l, v, dot) => (v = v || (F ? "—" : "")) ? `<span class="pf-chip ${cls}">${dot ? "<i></i>" : ""}${l}<b>${esc(v)}</b></span>` : "";
   const chips = chip("c1", "HEIGHT", c.height) + chip("c2", "NATION", c.nation, 1) + chip("c3", "AGE", c.age);
   const side = c.sideImg || chips;
+  const noTrk = F && !tracks.length ? `<div class="pf-trk pf-phx"><div class="pf-trk-h"><span class="pf-vinyl"></span><span class="pf-trk-m"><span class="pf-trk-t"><small>가사 한 줄</small><b>TITLE</b><em>♪ 곡명<br>— 아티스트</em></span></span></div></div>` : "";
   const trk = t => {
     const id = ytId(t.yt), body = fmt(t.body);
     const text = `<span class="pf-trk-t"><small>${esc(t.lyric)}</small><b>${esc(t.title)}</b><em>♪ ${esc(t.song)}${t.artist ? "<br>— " + esc(t.artist) : ""}</em></span>`;
@@ -78,24 +87,25 @@ export function renderProfile(c, opt = {}) {
     return `<div class="pf-trk"><div class="pf-trk-h"><span class="pf-vinyl" data-a="trk" data-yt="${id}"></span>
       <span class="pf-trk-m" data-a="trkopen">${text}${body ? `<span class="pf-plus">+</span>` : ""}</span></div>${more}</div>`;
   };
-  const left = sec("Profile", "프로필", fmt(c.profile))
-    + sec("Affiliation", "소속 및 계급", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v)}</dd></div>`).join("")}</dl>` : "")
-    + sec("Record", "이력 · ETC", fmt(c.record));
-  const main = c.mainImg ? `<div class="pf-main"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} ${c.mainImgPos ? `style="object-position:${esc(c.mainImgPos)}"` : ""} alt=""></div>` : "";
+  const left = sec("Profile", "프로필", fmt(c.profile), ph("프로필 본문"))
+    + sec("Affiliation", "소속 및 계급", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v) || (F ? "—" : "")}</dd></div>`).join("")}</dl>` : "", ph("소속 및 계급"))
+    + sec("Record", "이력 · ETC", fmt(c.record), ph("이력 · 기타"));
+  const main = c.mainImg ? `<div class="pf-main"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} style="${mainImgStyle(c)}" alt=""></div>`
+    : F ? `<div class="pf-main pf-ph">MAIN IMAGE</div>` : "";
   return `<div class="pf">
-    <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span class="mid">FLD // 20_∞</span><span>${c.clearance ? "Clearance =<br>" + esc(c.clearance) : ""}</span>
+    <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span class="mid">FLD // 20_∞</span><span>${c.clearance || F ? "Clearance =<br>" + (esc(c.clearance) || "—") : ""}</span>
       <span>${String(c.topRight || "").split("\n").map(l => esc(l.replace(/↵\s*$/, "").trim())).filter(Boolean).slice(0, 2).join("<br>")}</span></div>
     <div class="pf-sub ${c.mainImg ? "over" : ""}"><span><b>↘</b>SUBJECT FILE<br><i>SUBJECT FILE</i></span><i class="pf-star">✦</i></div>
     <div class="pf-hero">${main}
       <div class="pf-id">${c.serial ? `<small>serial no. ${esc(c.serial)}</small>` : ""}
-        <h1>${esc(c.num || c.name || "—")}</h1>
-        <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${inl(c.tagline)}</strong>` : ""}${fmt(c.intro)}
+        <h1${F && !(c.num || c.name) ? ' class="pf-phx"' : ""}>${esc(c.num || c.name || (F ? "CODENAME" : "—"))}</h1>
+        <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${inl(c.tagline)}</strong>` : F ? `<strong class="pf-tag pf-phx">한 줄 소개</strong>` : ""}${fmt(c.intro) || ph("소개글")}
       </div>
     </div>
     <div class="pf-cols"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
-      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>` : chips}</aside>` : ""}
+      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>` : F ? `<div class="pf-sidebox pf-ph">SIDE IMAGE${chips}</div>` : chips}</aside>` : ""}
     </div>
-    ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""))}
+    ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""), noTrk)}
     ${secret(c, opt)}
     <div class="pf-foot"></div>
   </div>`;

@@ -105,3 +105,12 @@
 .pf-sub b{display:block;font-size:17px;font-weight:400;line-height:1;margin-bottom:10px;color:inherit}
 .pf-sub span i{font-style:normal;padding-left:14px}
 .pf-star{font-style:normal;font-size:30px;line-height:1;color:var(--accent);transform:scaleX(.6)}
+
+/* v6: 기울임, 상단 이미지 확대, 빈 칸 틀 */
+.ti{font-style:italic}
+.pf-main{overflow:hidden}
+.pf-ph{display:grid;place-items:center;min-height:300px;border:1px dashed var(--line);color:var(--fg3);font-size:10px;font-weight:700;letter-spacing:.2em;background:repeating-linear-gradient(-45deg,transparent 0 10px,color-mix(in srgb,var(--fg) 4%,transparent) 10px 20px)}
+.pf-main.pf-ph::after,.pf-sidebox.pf-ph::after{display:none}
+.pf-main.pf-ph+.pf-id{margin-top:0}
+.pf-sidebox.pf-ph{min-height:380px}
+.pf-phx{opacity:.32}

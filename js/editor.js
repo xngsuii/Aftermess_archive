@@ -1,10 +1,10 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, mainImgStyle } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
-const BLANK = () => ({ faction: "ww", affil: [], tracks: [] });
-let data = null, built = false, timer;
+const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
+let data = null, built = false, timer, fit = false, moving = false, grab = null;
 
 const idb = () => new Promise((ok, no) => {
   const r = indexedDB.open("afms-editor", 1);
@@ -19,10 +19,53 @@ async function save() {
   try { const d = await idb(); d.transaction("kv", "readwrite").objectStore("kv").put(data, "draft"); } catch (e) {}
 }
 
-function preview() {
+// frame: 빈 칸도 틀을 보여 준다 (내보낼 때는 끈다)
+function preview(frame = true) {
   const pv = document.getElementById("ed-pv");
   pv.dataset.faction = document.getElementById("editor").dataset.faction = data.faction;
-  pv.innerHTML = renderProfile(data);
+  pv.innerHTML = renderProfile(data, { frame });
+  pv.classList.toggle("moving", moving && !!mainImg());
+  applyFit();
+}
+const mainImg = () => document.querySelector("#ed-pv .pf-main img");
+// 맞춤 보기: 미리보기 전체가 한 화면에 들어오도록 줄인다
+function applyFit() {
+  const pv = document.getElementById("ed-pv"), pf = pv?.querySelector(".pf"); if (!pf) return;
+  pf.style.zoom = "";
+  if (fit) pf.style.zoom = Math.min(1, (pv.clientHeight - 48) / pf.offsetHeight).toFixed(3);
+}
+// 상단 이미지: 더블클릭하면 끌어서 옮기고 휠로 확대한다
+function syncZoom() {
+  const r = document.querySelector('#ed-form input[data-k="mainImgZoom"]');
+  if (r) { r.value = data.mainImgZoom || 1; r.nextSibling.textContent = Math.round(r.value * 100) + "%"; }
+}
+function paintImg() { const im = mainImg(); if (im) im.style.cssText = mainImgStyle(data); clearTimeout(timer); timer = setTimeout(save, 500); }
+function setMoving(on) {
+  moving = on; grab = null;
+  document.getElementById("ed-pv").classList.toggle("moving", on);
+  toast(on ? "이미지를 끌어서 옮기고, 휠로 확대합니다. 다시 더블클릭하면 끝납니다." : "이미지 위치를 저장했습니다.");
+}
+function bindImage(pv) {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  pv.addEventListener("dblclick", e => { if (e.target === mainImg()) { e.preventDefault(); setMoving(!moving); } });
+  pv.addEventListener("pointerdown", e => { if (moving && e.target === mainImg()) { e.preventDefault(); grab = { x: e.clientX, y: e.clientY }; } });
+  addEventListener("pointermove", e => {
+    if (!grab) return;
+    const r = mainImg().getBoundingClientRect(), [px, py] = (data.mainImgPos || "50% 0%").split(" ").map(parseFloat);
+    data.mainImgPos = `${clamp(px - (e.clientX - grab.x) / r.width * 100, 0, 100).toFixed(1)}% ${clamp(py - (e.clientY - grab.y) / r.height * 100, 0, 100).toFixed(1)}%`;
+    grab = { x: e.clientX, y: e.clientY }; paintImg();
+  });
+  addEventListener("pointerup", () => grab = null);
+  pv.addEventListener("wheel", e => {
+    if (!moving || e.target !== mainImg()) return;
+    e.preventDefault();
+    data.mainImgZoom = +clamp((data.mainImgZoom || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
+    paintImg(); syncZoom();
+  }, { passive: false });
+  pv.addEventListener("dragstart", e => { if (moving) e.preventDefault(); });
+  pv.addEventListener("load", applyFit, true);
+  addEventListener("resize", applyFit);
+  addEventListener("keydown", e => { if (e.key === "Escape" && moving) setMoving(false); });
 }
 function changed() {
   preview();
@@ -52,14 +95,18 @@ async function exportHtml() {
 }
 async function exportPng(btn) {
   if (!window.htmlToImage) return toast("이미지 저장 기능을 불러오지 못했습니다.");
-  const node = document.querySelector("#ed-pv .pf");
+  let node = document.querySelector("#ed-pv .pf");
   node.querySelectorAll(".pf-trk.on .pf-vinyl").forEach(h => h.click());
   btn.disabled = true; btn.textContent = "만드는 중…";
+  // 내보낼 때는 빈 칸 틀과 맞춤 배율을 끄고 실제 크기로 만든다
+  const wasFit = fit; fit = false; moving = false; preview(false);
+  node = document.querySelector("#ed-pv .pf");
   try {
     const bg = getComputedStyle(node).getPropertyValue("--bg").trim();
     const url = await window.htmlToImage.toPng(node, { pixelRatio: 2, backgroundColor: bg });
     download(fileName() + ".png", await (await fetch(url)).blob());
   } catch (e) { console.error(e); toast("이미지를 만들지 못했습니다."); }
+  fit = wasFit; preview();
   btn.disabled = false; btn.textContent = "이미지 저장";
 }
 
@@ -68,9 +115,10 @@ async function build() {
   data = { ...BLANK(), ...((await load()) || {}) };
   const el = document.getElementById("editor");
   el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back">← 돌아가기</button><h3>프로필 편집기</h3>
-    <button class="btn" id="ed-reset">새로 쓰기</button><button class="btn" id="ed-html">HTML 저장</button><button class="btn pri" id="ed-png">이미지 저장</button></div>
+    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><button class="btn" id="ed-html">HTML 저장</button><button class="btn pri" id="ed-png">이미지 저장</button></div>
     <div class="ed-grid"><div class="ed-pv" id="ed-pv"></div><div class="ed-form" id="ed-form"></div></div>`;
-  form(); preview();
+  form(); preview(); bindImage(el.querySelector("#ed-pv"));
+  el.querySelector("#ed-fit").onclick = e => { fit = !fit; e.currentTarget.textContent = fit ? "100% 보기" : "맞춤 보기"; applyFit(); };
   el.querySelector("#ed-html").onclick = () => exportHtml().catch(e => { console.error(e); toast("HTML을 만들지 못했습니다."); });
   el.querySelector("#ed-png").onclick = e => exportPng(e.currentTarget);
   el.querySelector("#ed-reset").onclick = () => {

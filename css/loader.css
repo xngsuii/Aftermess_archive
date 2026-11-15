@@ -187,3 +187,4 @@
 .lz-enter{display:block}
 .lz-enter:disabled{border-color:rgba(255,255,255,.2);background:none;color:var(--d);animation:none;cursor:not-allowed}
 .lz-enter:disabled:hover{background:none}
+#loader>.lz-r{padding-bottom:118px}
