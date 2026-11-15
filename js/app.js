@@ -120,10 +120,14 @@ function fileHtml(c) {
   const tab = (k, l) => `<button class="${cur === k ? "on" : ""}" data-a="tab:${k}">${l}</button>`;
   let body;
   if (cur === "assets") {
-    const a = (c.assets || []).filter(x => x.img);
-    body = `<div class="file-pad"><div class="agrid">${a.map(x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`).join("")}</div>
+    const a = (c.assets || []).filter(x => x.img), groups = (c.assetGroups || []).filter(g => g.name), names = groups.map(g => g.name);
+    const fig = x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`;
+    const add = (g, txt) => `<label class="btn adm" style="cursor:pointer">${txt}<input type="file" class="asset-add" data-char="${c.id}" data-g="${esc(g)}" accept="image/*" multiple hidden></label>`;
+    const sect = (g, label) => { const xs = a.filter(x => g ? x.g === g : !names.includes(x.g));
+      return !xs.length && !S.user ? "" : `<div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div>`; };
+    body = `<div class="file-pad">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
       ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-      <p class="adm" style="margin-top:14px"><label class="btn" style="cursor:pointer">+ 사진 추가 (여러 장 선택 가능)<input type="file" id="asset-add" data-char="${c.id}" accept="image/*" multiple hidden></label> <span style="font-size:11px;color:var(--fg3);margin-left:8px">드래그로 순서 변경 · ✕로 삭제</span></p></div>`;
+      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가 (여러 장 선택 가능)")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
   } else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
@@ -201,9 +205,9 @@ const EDIT = {
     openForm({ title: `캐릭터 편집 · ${c.name || ""}`, schema: charSchema(), data: c, onSave: async v => { await saveChar(v); render(); },
       onDelete: async () => { await delChar(id); S.openChar = null; render(); } });
   },
-  assets: id => {
+  agroups: id => {
     const c = S.chars.find(x => x.id === id);
-    openForm({ title: `에셋 · ${c.name || ""}`, schema: [{ k: "assets", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }, T("cap", "설명 (선택)")] }], data: c, onSave: async v => { await saveChar(v); render(); } });
+    openForm({ title: `에셋 그룹 · ${c.name || c.num || ""}`, schema: [{ k: "assetGroups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "일러스트")] }], data: c, onSave: async v => { await saveChar(v); drawFile(); } });
   },
   memo: id => editMemo(S.memos.find(m => m.id === id)),
   newmemo: () => editMemo({ id: newId("m"), title: "", body: "", imgs: [], charIds: [], tags: [], at: Date.now() }, true)
@@ -264,8 +268,15 @@ const ACT = {
   more() { S.memoN += 20; drawMemos(); },
   secret(_, el) { toggleSecret(el); },
   full(id, el) {
-    const ids = [...(el.closest(".agrid")?.querySelectorAll("[data-a^='full:']") || [el])].map(x => x.dataset.a.slice(5));
-    lightbox(ids, Math.max(0, ids.indexOf(id)));
+    const asset = el.matches(".asset"), cid = S.openChar;
+    const ids = [...(asset ? document.querySelectorAll("#file .asset") : el.closest(".agrid")?.querySelectorAll("[data-a^='full:']") || [el])].map(x => x.dataset.a.slice(5));
+    const c = asset && S.chars.find(x => x.id === cid), caps = {};
+    if (c) (c.assets || []).forEach(x => { if (x.cap) caps[x.img] = x.cap; });
+    lightbox(ids, Math.max(0, ids.indexOf(id)), !c ? {} : { caps, onCap: !S.user ? null : async (img, cap) => {
+      const cur = S.chars.find(x => x.id === cid); if (!cur) return;
+      try { await saveChar({ ...cur, assets: (cur.assets || []).map(x => x.img === img ? { ...x, cap } : x) }); toast("설명을 저장했습니다"); }
+      catch (e) { console.error(e); toast("설명을 저장하지 못했습니다. " + why(e)); }
+    } });
   },
   async delasset(arg) {
     const [cid, img] = arg.split(":"), c = S.chars.find(x => x.id === cid);
@@ -294,6 +305,7 @@ const ACT = {
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
 document.addEventListener("click", e => {
+  if (e.target.closest(".lb-cap.edit")) return;
   if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }
   if (!e.target.closest(".pt,.pt-pop")) { document.querySelector(".pt-pop")?.remove(); document.querySelector(".pt.on")?.classList.remove("on"); }
   const el = e.target.closest("[data-a]"); if (!el) return;
@@ -480,9 +492,9 @@ document.addEventListener("dragstart", e => {
 });
 document.addEventListener("dragover", e => {
   if (!dragEl) return;
-  const over = e.target.closest(CARD), box = e.target.closest("#people .pgrid, #people .lgrid");
   const asset = dragEl.matches(".asset");
-  if (asset ? !over?.matches(".asset") : (over?.matches(".asset") || (!over && !box))) return;
+  const over = e.target.closest(CARD), box = e.target.closest(asset ? "#file .agrid[data-agroup]" : "#people .pgrid, #people .lgrid");
+  if (asset ? (over ? !over.matches(".asset") : !box) : (over?.matches(".asset") || (!over && !box))) return;
   e.preventDefault();
   if (performance.now() < dragLock) return;
   if (over && over !== dragEl) {
@@ -500,11 +512,15 @@ document.addEventListener("dragend", async () => {
   if (asset) {
     // 에셋: 화면에 놓인 순서대로 저장
     const c = S.chars.find(x => x.id === S.openChar); if (!c) return;
-    const order = [...document.querySelectorAll("#file .asset")].map(el => el.dataset.asset);
-    const next = order.map(id => (c.assets || []).find(x => x.img === id)).filter(Boolean);
-    if (next.map(x => x.img).join() === (c.assets || []).filter(x => x.img).map(x => x.img).join()) return;
+    const next = [...document.querySelectorAll("#file .asset")].map(el => {
+      const x = (c.assets || []).find(a => a.img === el.dataset.asset), g = el.closest("[data-agroup]")?.dataset.agroup;
+      return x && (g == null ? x : { ...x, g });
+    }).filter(Boolean);
+    const key = xs => xs.filter(x => x.img).map(x => x.img + "|" + (x.g || "")).join();
+    if (key(next) === key(c.assets || [])) return;
     try { await saveChar({ ...c, assets: next }); toast("순서를 저장했습니다"); }
-    catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); drawFile(); }
+    catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); }
+    drawFile();
     return;
   }
   // 화면에 놓인 순서와 그룹을 그대로 저장한다
@@ -528,14 +544,14 @@ document.addEventListener("input", e => {
 // ---------- 에셋: 사진을 고르면 바로 올린다 (여러 장 가능) ----------
 document.addEventListener("change", async e => {
   const inp = e.target;
-  if (inp.id !== "asset-add") return;
+  if (!inp.classList?.contains("asset-add")) return;
   const files = [...inp.files], c = S.chars.find(x => x.id === inp.dataset.char);
   if (!files.length || !c) return;
   const added = [];
   try {
     for (let i = 0; i < files.length; i++) {
       toast(`사진 올리는 중… ${i + 1} / ${files.length}`);
-      added.push({ img: await saveImage(files[i], { thumb: true }) });
+      added.push({ img: await saveImage(files[i], { thumb: true }), g: inp.dataset.g || "" });
     }
   } catch (err) { console.error(err); toast("일부 사진을 올리지 못했습니다. " + why(err)); }
   if (added.length) {
@@ -545,6 +561,6 @@ document.addEventListener("change", async e => {
   drawFile();
 });
 document.addEventListener("keydown", e => {
-  if (!document.getElementById("lb").classList.contains("on")) return;
+  if (!document.getElementById("lb").classList.contains("on") || e.target.closest?.("input,textarea")) return;
   if (e.key === "ArrowRight") lbStep(1); else if (e.key === "ArrowLeft") lbStep(-1); else if (e.key === "Escape") lbClose();
 });

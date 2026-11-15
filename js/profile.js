@@ -7,7 +7,9 @@ export const PROFILE_FIELDS = [
   { k: "useProfile", type: "check", def: true, site: true, label: "프로필 사용 (끄면 ASSET과 MEMO만 표시)" },
   { k: "num", label: "코드네임", ph: "7" },
   { k: "serial", label: "일련번호", ph: "2080  004" },
-  { k: "clearance", label: "보안 등급 (우측 상단)", ph: "Seven" },
+  { k: "topCode", label: "상단 두 번째 글", ph: "FLD // 20_∞" },
+  { k: "clearance", label: "보안 등급 (상단 세 번째, Clearance = 아래)", ph: "Seven" },
+  { k: "topRight", label: "상단 맨 오른쪽 글 (두 줄까지)", type: "area", plain: true, ph: "Operational Detachment\nMILGRAM" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
@@ -82,7 +84,9 @@ export function renderProfile(c, opt = {}) {
     + sec("Record", "이력 · ETC", fmt(c.record));
   const main = c.mainImg ? `<div class="pf-main"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} ${c.mainImgPos ? `style="object-position:${esc(c.mainImgPos)}"` : ""} alt=""></div>` : "";
   return `<div class="pf">
-    <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span>${c.clearance ? "Clearance =<br>" + esc(c.clearance) : ""}</span></div>
+    <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span class="mid">${esc(c.topCode)}</span><span>${c.clearance ? "Clearance =<br>" + esc(c.clearance) : ""}</span>
+      <span>${String(c.topRight || "").split("\n").map(l => esc(l.replace(/↵\s*$/, "").trim())).filter(Boolean).slice(0, 2).join("<br>")}</span></div>
+    <div class="pf-sub ${c.mainImg ? "over" : ""}"><span><b>↘</b>SUBJECT FILE<br><i>SUBJECT FILE</i></span><i class="pf-star">✦</i></div>
     <div class="pf-hero">${main}
       <div class="pf-id">${c.serial ? `<small>serial no. ${esc(c.serial)}</small>` : ""}
         <h1>${esc(c.num || c.name || "—")}</h1>

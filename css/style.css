@@ -145,7 +145,7 @@ body.admin .ed{display:inline-block}
 .pc-b{transform:rotateY(180deg);background-color:#111;background-size:cover;background-position:top center;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;color:#f2f2f0}
 .pc-b::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,#060607 12%,transparent 65%)}
 .pc-b>*{position:relative}
-.pc-b b{font-size:17px;font-weight:900;color:#fff;text-transform:uppercase;line-height:1.2}
+.pc-b b{font-size:17px;font-weight:900;color:#fff;line-height:1.2}
 .pc-b i{width:18px;height:2px;background:var(--accent);margin:5px 0}
 .pc-b span{font-size:10px;font-weight:600;line-height:1.5;color:#c9c9c5}
 .lcard{position:relative;margin-bottom:14px;cursor:pointer}
@@ -412,7 +412,7 @@ body.admin .ax{display:grid}
 .chr .tg-b>div>:first-child{border-top:1px solid var(--line);padding-top:12px}
 .chr .tg-b>div>:last-child{margin-bottom:14px}
 .pt{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;display:grid;place-items:center;z-index:2}
-.pt i{width:9px;height:9px;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.45);transition:transform .2s}
+.pt i{width:9px;height:9px;background:#fff;transition:transform .2s}
 .pt.hot i{background:var(--accent)}
 .pt:hover i,.pt.on i{transform:scale(1.35)}
 .pt b{position:absolute;left:calc(100% + 2px);top:50%;transform:translateY(-50%);white-space:nowrap;font-size:10px;font-weight:800;letter-spacing:.14em;color:#fff;text-transform:uppercase;text-shadow:0 1px 4px #000,0 0 2px #000}
@@ -425,3 +425,17 @@ body.admin .pt{cursor:grab;touch-action:none}
 .pt-pop p:last-child{margin:0}
 .mstats{display:flex;flex-wrap:wrap;gap:8px 44px;padding:18px 0;border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--fg3)}
 .mstats b{margin-left:10px;font-size:15px;font-weight:700;color:var(--fg)}
+
+/* v10: 라이트박스 설명, 에셋 그룹 */
+.lb-n{bottom:auto;top:18px}
+.lb-cap{position:fixed;left:0;right:0;bottom:0;padding:46px 20px 22px;background:linear-gradient(to top,rgba(0,0,0,.88),rgba(0,0,0,.45) 55%,transparent);text-align:center;color:#fff;font-size:14px;font-weight:600;letter-spacing:.02em;cursor:default;opacity:0;pointer-events:none;transition:opacity .2s}
+.lb-cap.has{opacity:1}
+.lb-cap.edit{pointer-events:auto}
+.lb-cap.edit:hover,.lb-cap.edit:focus-within{opacity:1}
+.lb-cap input{width:min(560px,100%);background:none;border:0;border-bottom:1px solid transparent;outline:0;text-align:center;color:#fff;font:inherit;padding:4px 0}
+.lb-cap input:hover,.lb-cap input:focus{border-bottom-color:rgba(255,255,255,.5)}
+.lb-cap input::placeholder{color:rgba(255,255,255,.5)}
+.file .grp{margin:26px 0 10px}
+.file .file-pad>.grp:first-child{margin-top:0}
+.grp .btn{padding:3px 9px;font-size:10px}
+body.admin .agrid[data-agroup]:empty{min-height:64px;border:1px dashed var(--line)}

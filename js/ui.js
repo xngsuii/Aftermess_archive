@@ -56,17 +56,29 @@ export const why = e => {
   return "원인: " + c;
 };
 // 이미지 크게 보기. 여러 장이면 화살표로 넘긴다.
-let lbIds = [], lbI = 0;
+// opt.caps: {이미지 id: 설명}, opt.onCap(id, 글): 있으면 아래쪽에서 설명을 고칠 수 있다
+let lbIds = [], lbI = 0, lbOpt = {};
 async function lbShow() {
   const lb = document.getElementById("lb"), id = lbIds[lbI], n = lb.querySelector(".lb-n");
   if (n) n.textContent = `${lbI + 1} / ${lbIds.length}`;
+  const cap = lb.querySelector(".lb-cap"), t = (lbOpt.caps || {})[id] || "";
+  cap.className = "lb-cap" + (t ? " has" : "") + (lbOpt.onCap ? " edit" : "");
+  if (lbOpt.onCap) {
+    cap.innerHTML = '<input maxlength="200" placeholder="설명 추가 (Enter로 저장)">';
+    const inp = cap.firstChild; inp.value = t;
+    inp.onkeydown = e => { e.stopPropagation(); if (e.key === "Enter" || e.key === "Escape") inp.blur(); };
+    inp.onchange = () => {
+      const v = inp.value.trim();
+      (lbOpt.caps = lbOpt.caps || {})[id] = v; cap.classList.toggle("has", !!v); lbOpt.onCap(id, v);
+    };
+  } else cap.textContent = t;
   const url = id.startsWith("data:") ? id : await getImage(id);
   if (lbIds[lbI] === id) lb.querySelector("img").src = url;
 }
-export function lightbox(ids, i = 0) {
-  lbIds = [].concat(ids); lbI = i;
+export function lightbox(ids, i = 0, opt = {}) {
+  lbIds = [].concat(ids); lbI = i; lbOpt = opt;
   const lb = document.getElementById("lb"), many = lbIds.length > 1;
-  lb.innerHTML = `${many ? '<button class="lb-nav l" data-lb="-1">‹</button>' : ""}<img alt="">${many ? '<button class="lb-nav r" data-lb="1">›</button><span class="lb-n"></span>' : ""}`;
+  lb.innerHTML = `${many ? '<button class="lb-nav l" data-lb="-1">‹</button>' : ""}<img alt="">${many ? '<button class="lb-nav r" data-lb="1">›</button><span class="lb-n"></span>' : ""}<div class="lb-cap"></div>`;
   lb.classList.add("on");
   lbShow();
 }
