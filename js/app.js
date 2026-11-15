@@ -101,7 +101,7 @@ function people() {
     <div class="${S.fold.people ? "shut" : ""}" data-fold="people">${body}
     <div id="file"></div></div></section>`;
 }
-const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.name || c.num) : null; }), ...(m.tags || [])].filter(Boolean))];
+const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.num || c.name) : null; }), ...(m.tags || [])].filter(Boolean))];
 const memoDate = m => m.at ? new Date(m.at).toLocaleDateString("sv").replaceAll("-", ".") : "";
 const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data-a="tog"><h4>${esc(m.title || String(m.body || "").slice(0, 40) || "제목 없음")}</h4>
     <time>${memoDate(m)}</time><span class="plus">+</span></button>
@@ -184,7 +184,7 @@ const charSchema = () => {
 };
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
   { k: "imgs", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }] },
-  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.name || c.num || "이름 없음"]) },
+  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.num || c.name || "이름 없음"]) },
   { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
   openForm({ title: isNew ? "메모 추가" : "메모 편집", schema: memoSchema(), data: m,

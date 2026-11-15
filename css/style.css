@@ -498,3 +498,9 @@ body.scrolled[data-view="faction"] #facsw{opacity:1;pointer-events:auto}
 #facsw button:hover{color:var(--fg)}
 #facsw button.on{color:var(--fg);border-right-color:var(--accent)}
 body.in-editor #facsw,body.in-editor #totop{display:none}
+/* v18: 전환 버튼 외곽선 없음, 인용 따옴표 간격·기울임 제거 */
+#facsw button{border:0;border-right:2px solid transparent}
+#facsw button.on{border-right-color:var(--accent)}
+.quote{padding-left:56px}
+.quote::before{font-style:normal;left:2px}
+@media(max-width:640px){.quote{padding-left:44px}}
