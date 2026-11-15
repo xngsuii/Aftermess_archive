@@ -51,7 +51,7 @@ function secret(c, opt) {
   const recs = (c.secretRecs || []).filter(r => r.date || r.body);
   const foot = c.realName || c.realNameEn || c.birthday || c.blood;
   return `<section class="pf-sec pf-secret ${opt.static ? "open" : ""}">
-    <header><h2>Secret<i class="pf-cls">CLASSIFIED</i></h2>${opt.static ? "" : `<span class="pf-stog" data-a="secret">열람 / 닫기 <b class="pf-plus">+</b></span>`}</header>
+    <header ${opt.static ? "" : 'data-a="secret" style="cursor:pointer"'}><h2>Secret<i class="pf-cls">CLASSIFIED</i></h2>${opt.static ? "" : `<span class="pf-stog">열람 / 닫기 <b class="pf-plus">+</b></span>`}</header>
     <p class="pf-ssub">캐릭터 비밀 설정 스포일러</p>
     <div class="pf-sb">
       ${c.secretIntro ? `<div class="pf-sintro">${fmt(c.secretIntro)}</div>` : ""}

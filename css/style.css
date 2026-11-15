@@ -450,3 +450,9 @@ body.admin div.adm{display:block}
 
 /* v12: 섹션 접기 */
 [data-fold].shut{display:none}
+
+/* v13: 제목 줄 눌러 접기, 지도 좌상단 글, 설명 창 태그 색 */
+.fold-h{cursor:pointer;user-select:none}
+.pt-pop h5 small{color:var(--fg3)}
+.pt-pop.hot h5 small{color:var(--accent)}
+.map-note{position:absolute;left:16px;top:14px;z-index:2;margin:0;text-align:left;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.6;text-transform:uppercase;color:#b9b9b5;text-shadow:0 1px 4px rgba(0,0,0,.8);pointer-events:none}
