@@ -387,3 +387,9 @@ body.admin .ax{display:grid}
 .lb-nav.r{right:12px}
 .lb-n{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;letter-spacing:.1em;color:#c9c9c5}
 .pill.all{border-style:dashed;color:var(--fg)}
+
+/* v8: 접히는 목록 항목 */
+.lst-it.fold>.lst-h span{cursor:pointer;color:var(--fg2);white-space:pre-wrap}
+.lst-it.fold>.lst-h span:hover{color:var(--fg)}
+.lst-it.fold.shut>:not(.lst-h){display:none}
+.lst-it.fold.shut{padding-bottom:2px}

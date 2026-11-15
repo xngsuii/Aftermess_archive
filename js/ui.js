@@ -93,7 +93,7 @@ function formatBar(input, onChange, withQuote) {
   mk("U", "밑줄 강조", () => wrap("__"));
   mk("회색", "글자색: 회색", () => wrap("{g:", "}"));
   mk("흰색", "글자색: 흰색", () => wrap("{w:", "}"));
-  mk("빨강", "글자색: 빨강", () => wrap("{r:", "}"));
+  mk("진영 색", "글자색: 진영 색 (W.W 빨강 / MILGRAM 파랑 / LEDGER 노랑)", () => wrap("{r:", "}"));
   if (withQuote) mk("❝ 인용", "인용구", quote);
   return bar;
 }
@@ -114,12 +114,24 @@ export function buildFields(schema, obj, ctx = {}) {
     w.append(lab);
     if (f.type === "list") {
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];
-      const box = h("div");
+      // f.fold: 항목을 접었다 펼 수 있게 한다 (기본은 접힘). 값은 접힌 제목에 보여 줄 칸 이름들.
+      const box = h("div"), opened = new WeakSet();
       const draw = () => {
         box.innerHTML = "";
         obj[f.k].forEach((it, i) => {
           const row = h("div", "lst-it"), head = h("div", "lst-h");
-          head.append(h("span", "", `${f.item || "항목"} ${i + 1}`));
+          const name = h("span", "", `${f.item || "항목"} ${i + 1}`);
+          head.append(name);
+          if (f.fold) {
+            const sync = () => {
+              const on = opened.has(it), t = f.fold.map(k => it[k]).filter(Boolean).join("  ·  ");
+              row.classList.toggle("shut", !on);
+              name.textContent = `${on ? "▾" : "▸"} ${f.item || "항목"} ${i + 1}${t ? "  ·  " + t : ""}`;
+            };
+            row.classList.add("fold");
+            name.onclick = () => { opened.has(it) ? opened.delete(it) : opened.add(it); sync(); };
+            sync();
+          }
           const mk = (txt, fn) => { const b = h("button", "", txt); b.type = "button"; b.onclick = () => { fn(); draw(); ch(); }; head.append(b); };
           mk("↑", () => { if (i > 0) [obj[f.k][i - 1], obj[f.k][i]] = [obj[f.k][i], obj[f.k][i - 1]]; });
           mk("↓", () => { if (i < obj[f.k].length - 1) [obj[f.k][i + 1], obj[f.k][i]] = [obj[f.k][i], obj[f.k][i + 1]]; });
@@ -128,7 +140,7 @@ export function buildFields(schema, obj, ctx = {}) {
           box.append(row);
         });
         const add = h("button", "btn", `+ ${f.item || "항목"} 추가`); add.type = "button";
-        add.onclick = () => { obj[f.k].push({}); draw(); ch(); };
+        add.onclick = () => { const n = {}; obj[f.k].push(n); opened.add(n); draw(); ch(); };
         box.append(add);
       };
       draw(); w.append(box);
