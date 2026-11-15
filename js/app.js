@@ -8,6 +8,7 @@ import { openEditor, closeEditor } from "./editor.js";
 
 const app = document.getElementById("app");
 S.fold = { people: false, chron: false };
+S.view = null; // null: 메인 화면만. "world" | "faction" | "trivia": 메인 아래에 그 화면 하나만 붙는다
 const ed = (what, label = "편집") => `<button class="ed" data-a="edit:${what}">${label}</button>`;
 const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path d="M50 14c-13 0-21 10-21 24 0 9 3 17 8 22-2 4-6 6-14 9C10 74 4 84 2 100h96c-2-16-8-26-21-31-8-3-12-5-14-9 5-5 8-13 8-22 0-14-8-24-21-24z"/></svg>`;
 S.q = ""; S.memoN = 20;
@@ -17,6 +18,12 @@ const facChars = () => S.chars.filter(c => c.faction === S.fac);
 function hero(s) {
   return `<section id="top" class="hero" data-pos="site|heroImgPos"><div class="hero-bg pos-t" ${bgAttr(s.heroImg, s.heroImgPos)}></div>${ed("hero", "메인 편집")}
     <p class="kicker">${inl(s.kicker)}</p>
+    <nav class="hmenu ${S.view === "faction" ? "open" : ""}">
+      <button class="${S.view === "world" ? "on" : ""}" data-a="view:world">WORLD</button>
+      <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf">FACTION</button>
+      <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
+      <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia">TRIVIA</button>
+    </nav>
     ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%">` : ""}</section>`;
 }
 function world(s) {
@@ -146,7 +153,8 @@ function drawFile(scroll) {
 }
 function render() {
   document.body.dataset.faction = document.documentElement.dataset.faction = S.fac;
-  app.innerHTML = hero(S.site) + world(S.site) + faction(S.factions[S.fac]) + people() + trivia();
+  document.body.dataset.view = S.view || "";
+  app.innerHTML = hero(S.site) + (S.view === "world" ? world(S.site) : S.view === "faction" ? faction(S.factions[S.fac]) + people() : S.view === "trivia" ? trivia() : "");
   drawFile();
   hydrate(app);
 }
@@ -250,7 +258,11 @@ const ACT = {
   },
   editor: openEditor, back: closeEditor,
   fac(k) { S.fac = k; S.openChar = null; render(); },
-  go(k) { S.fac = k; S.openChar = null; render(); document.getElementById("faction").scrollIntoView(); },
+  // 화면 고르기: 메인 아래에 붙이고 페이지 넘김으로 내려간다
+  view(k) { S.view = k; S.openChar = null; render(); requestAnimationFrame(() => slideTo(heroH())); },
+  go(k) { S.fac = k; ACT.view("faction"); },
+  hmf(_, el) { el.closest(".hmenu").classList.toggle("open"); },
+  top() { slideTo(0); },
   tog(_, el) { el.closest(".tg").classList.toggle("open"); },
   fold(k, el) {
     S.fold[k] = !S.fold[k];
@@ -413,7 +425,7 @@ function slideTo(to) {
 }
 // dir > 0: 아래로. 넘김을 처리했으면 true
 function pageTurn(dir) {
-  if (blocked()) return false;
+  if (blocked() || !S.view) return false;
   if (sliding) return true;
   const h = heroH(), y = scrollY;
   if (dir > 0 && y < h - 2) { slideTo(h); return true; }
@@ -426,10 +438,11 @@ addEventListener("keydown", e => {
   const d = ["ArrowDown", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "PageUp"].includes(e.key) ? -1 : 0;
   if (d && pageTurn(d)) e.preventDefault();
 });
+addEventListener("scroll", () => document.body.classList.toggle("scrolled", scrollY > innerHeight * 0.5), { passive: true });
 let ty = null;
 addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
 addEventListener("touchmove", e => {
-  if (ty == null || blocked()) return;
+  if (ty == null || blocked() || !S.view) return;
   const d = ty - e.touches[0].clientY, h = heroH();
   if (sliding || (d > 0 && scrollY < h - 2) || (d < 0 && scrollY > 0 && scrollY <= h + 2)) {
     if (e.cancelable) e.preventDefault();

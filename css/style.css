@@ -456,3 +456,26 @@ body.admin div.adm{display:block}
 .pt-pop h5 small{color:var(--fg3)}
 .pt-pop.hot h5 small{color:var(--accent)}
 .map-note{position:absolute;left:16px;top:14px;z-index:2;margin:0;text-align:left;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.6;text-transform:uppercase;color:#b9b9b5;text-shadow:0 1px 4px rgba(0,0,0,.8);pointer-events:none}
+
+/* v14: 화면 나누기 — 메인 메뉴, 진영 선택 줄, 맨 위로 버튼 */
+#bar .brand,#bar nav a{cursor:pointer}
+body[data-view="world"] #bar [data-a="view:world"],body[data-view="faction"] #bar [data-a="view:faction"],body[data-view="trivia"] #bar [data-a="view:trivia"]{color:var(--fg);box-shadow:0 2px 0 var(--accent)}
+.hmenu{position:absolute;z-index:3;right:9%;top:19%;display:flex;flex-direction:column;align-items:flex-end;gap:clamp(14px,2.6vh,30px)}
+.hmenu>button{font-size:clamp(26px,3.1vw,46px);font-weight:300;letter-spacing:.02em;line-height:1.1;color:#fff;padding:0 0 4px;border-bottom:2px solid transparent;transition:border-color .2s,letter-spacing .25s}
+.hmenu>button:hover,.hmenu>button.on{border-bottom-color:var(--c-ww)}
+.hmenu>button:hover{letter-spacing:.08em}
+.hm-sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease;margin:-6px 0}
+.hmenu.open .hm-sub{grid-template-rows:1fr;margin:0}
+.hm-sub>div{overflow:hidden;min-height:0;display:flex;gap:22px;justify-content:flex-end}
+.hm-sub button{font-size:13px;font-weight:800;letter-spacing:.16em;color:#cfcfcb;padding:4px 0 6px;border-bottom:2px solid transparent}
+.hm-sub button:hover,.hm-sub button.on{color:#fff;border-bottom-color:var(--accent)}
+.fsel{border:0}
+.fsel button{border-right:0;color:var(--fg3)}
+.fsel button:hover{color:var(--fg2)}
+.fsel button.on{background:none;color:var(--fg)}
+#totop{position:fixed;right:22px;bottom:22px;z-index:19;width:44px;height:44px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(8px);font-size:18px;color:var(--fg);opacity:0;pointer-events:none;transition:opacity .25s,border-color .2s}
+#totop:hover{border-color:var(--accent)}
+body.scrolled #totop{opacity:1;pointer-events:auto}
+@media(max-width:640px){
+  .hmenu{right:24px;top:17%}
+}
