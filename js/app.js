@@ -340,23 +340,37 @@ const cityXY = ([, la, lo]) => [((lo - 5) * 5 / 3).toFixed(1), ((10.5 - la) * 5 
 const dms = (v, pos, neg) => { const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = Math.floor(((a - d) * 60 - m) * 60);
   return `${d}°${String(m).padStart(2, "0")}'${String(s).padStart(2, "0")}" ${v >= 0 ? pos : neg}`; };
 const cts = $l("lz-cts");
-cts.innerHTML = CITIES.map(c => { const [x, y] = cityXY(c); return `<g class="ct" transform="translate(${x} ${y})"><circle class="rg" r="4"/><rect class="sq" x="-2.5" y="-2.5" width="5" height="5"/><text x="9" y="-7">${c[0]}</text></g>`; }).join("");
+cts.innerHTML = CITIES.map(c => { const [x, y] = cityXY(c); return `<rect class="ct" x="${x - 2.5}" y="${y - 2.5}" width="5" height="5"/>`; }).join("");
 const shortCo = (v, w, pos, neg) => String(Math.floor(Math.abs(v))).padStart(w, "0") + "°" + String(Math.floor(Math.abs(v) % 1 * 60)).padStart(2, "0") + "'" + (v >= 0 ? pos : neg);
 const cl = $l("lz-cl");
 cl.innerHTML = CITIES.map((c, i) => `<text class="cl" x="${i % 2 ? 14 : -214}" y="${162 + (i >> 1) * 13}">${String(i + 1).padStart(2, "0")}  ${c[0]}<tspan x="${i % 2 ? 214 : -14}">${shortCo(c[1], 2, "N", "S")} ${shortCo(c[2], 3, "E", "W")}</tspan></text>`).join("");
+// 숫자가 빠르게 바뀌다가 왼쪽부터 차례로 목표 값에 멈춘다
+const scramble = (els, target, dur = 750) => {
+  const t0 = performance.now();
+  clearInterval(els.t);
+  els.t = setInterval(() => {
+    const k = (performance.now() - t0) / dur, n = Math.floor(k * target.length);
+    const s = k >= 1 ? target : target.replace(/\d/g, (d, i) => i < n ? d : Math.floor(Math.random() * 10));
+    els.forEach(el => el.textContent = s);
+    if (k >= 1) clearInterval(els.t);
+  }, 45);
+};
+const coEls = [$l("lz-big"), $l("lz-co"), $l("lz-co2")], fqEls = [$l("lz-fq")];
 let ci = -1;
 const cityStep = () => {
   ci = (ci + 1) % CITIES.length;
-  const c = CITIES[ci], [x, y] = cityXY(c), co = `${dms(c[1], "N", "S")}, ${dms(c[2], "E", "W")}`, no = String(ci + 1).padStart(2, "0");
-  [...cts.children].forEach((g, i) => g.classList.toggle("on", i === ci));
+  const c = CITIES[ci], [x, y] = cityXY(c), no = String(ci + 1).padStart(2, "0");
   [...cl.children].forEach((t, i) => t.classList.toggle("on", i === ci));
+  // 십자선과 표시가 같은 경로로 함께 이동한다
   $l("lz-chh").style.transform = `translateY(${y}px)`; $l("lz-chv").style.transform = `translateX(${x}px)`;
-  $l("lz-big").textContent = $l("lz-co").textContent = $l("lz-co2").textContent = co;
-  $l("lz-bigc").textContent = `SITE ${no} · ${c[0]}`; $l("lz-city").textContent = c[0];
+  $l("lz-mk").style.transform = `translate(${x}px,${y}px)`;
+  scramble(coEls, `${dms(c[1], "N", "S")}, ${dms(c[2], "E", "W")}`);
+  scramble(fqEls, (88 + Math.random() * 56).toFixed(2), 500);
+  $l("lz-bigc").textContent = `SITE ${no} · ${c[0]}`; $l("lz-city").textContent = $l("lz-mkt").textContent = c[0];
   $l("lz-ix").textContent = `${no} / ${String(CITIES.length).padStart(2, "0")}`;
 };
 cityStep();
-const cityT = setInterval(cityStep, 1800);
+const cityT = setInterval(cityStep, 2400);
 const enterSite = () => { LD.classList.add("done"); clearInterval(cityT); };
 let goal = 6, cur = 0;
 (function tick() {
@@ -369,7 +383,7 @@ let goal = 6, cur = 0;
   if (cur < 100) return requestAnimationFrame(tick);
   LD.classList.add("ready");
   $l("lz-st").textContent = "ONLINE";
-  $l("lz-warn").textContent = "□ SEAL CONFIRMED · CLEAR";
+  $l("lz-warn").textContent = "□ SEAL CONFIRMED";
 })();
 $l("lz-enter").onclick = $l("lz-skip").onclick = enterSite;
 document.addEventListener("keydown", e => { if (e.key === "Enter" && LD.classList.contains("ready") && !LD.classList.contains("done")) enterSite(); });
