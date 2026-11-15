@@ -37,7 +37,7 @@ export async function loadAll(step) {
   S.chars = cs.docs.map(d => ({ id: d.id, ...d.data() }));
   sortChars();
   const ms = await getDocs(collection(db, "memos")); step();
-  S.memos = ms.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0));
+  S.memos = ms.docs.map(d => normMemo({ id: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0));
 }
 export function useDefaults() {
   S.site = S.site || { ...DEF_SITE }; normSite();
@@ -50,6 +50,15 @@ function normSite() {
     { year: "2030", label: "핵전쟁 발발", body: s.synTitle || "" },
     { year: "— 50y", label: "멸망 위기", body: s.synBody || "" },
     { year: "2080", label: "현재 · 애프터메스", body: "" }];
+}
+// 예전 메모(캐릭터 하나 + 쉼표 태그)를 캐릭터 여러 명 + 태그 목록 구조로 맞춘다
+function normMemo(m) {
+  m.charIds = Array.isArray(m.charIds) ? m.charIds : (m.charId ? [m.charId] : []);
+  m.tags = Array.isArray(m.tags) ? m.tags : String(m.tags || "").split(",").map(t => t.trim()).filter(Boolean);
+  if (!m.charIds.length && !m.tags.length) m.tags = ["세계관"];
+  m.imgs = m.imgs || [];
+  delete m.charId;
+  return m;
 }
 function sortChars() { S.chars.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)); }
 

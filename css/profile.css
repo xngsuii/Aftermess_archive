@@ -72,3 +72,21 @@
 .pf-trk-b p{margin-bottom:.7em}
 .pf-player{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;margin:0;aspect-ratio:auto}
 @media(max-width:640px){.pf-trk-b{margin-left:0}.pf-main+.pf-id{margin-top:-160px}}
+
+/* ---- v3 ---- */
+.pf p{margin-bottom:.45em}
+.pf-cls{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.12em;background:var(--accent);color:#fff;padding:3px 8px;margin-left:10px;vertical-align:middle}
+.pf-stog{cursor:pointer;display:flex;align-items:center;gap:10px}
+.pf-ssub{font-size:11px;color:var(--fg3);margin:-10px 0 22px!important}
+.pf-sb{display:none}
+.pf-secret.open .pf-sb{display:block}
+.pf-sintro{font-size:13px;color:var(--fg3);margin-bottom:26px}
+.pf-simg{width:100%;margin-bottom:26px}
+.pf-sbody{color:var(--fg);font-weight:500}
+.pf-srec{border-top:1px solid var(--line);margin-top:30px;padding-top:22px}
+.pf-srec h5{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--fg3);margin:0 0 18px}
+.pf-srec>div{margin-bottom:20px;color:var(--fg);font-weight:500}
+.pf-srec .d{font-size:11px;font-weight:700;color:var(--fg3);letter-spacing:.06em;margin-bottom:6px}
+.pf-srec .d b{color:var(--accent);margin-right:8px}
+.pf-sfoot{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);margin-top:26px;padding-top:16px;font-size:12px;color:var(--fg3)}
+.pf-sfoot b{font-size:14px;color:var(--fg);margin-right:6px}

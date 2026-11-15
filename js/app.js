@@ -3,12 +3,13 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm, why } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 
 const app = document.getElementById("app");
 const ed = (what, label = "편집") => `<button class="ed" data-a="edit:${what}">${label}</button>`;
 const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path d="M50 14c-13 0-21 10-21 24 0 9 3 17 8 22-2 4-6 6-14 9C10 74 4 84 2 100h96c-2-16-8-26-21-31-8-3-12-5-14-9 5-5 8-13 8-22 0-14-8-24-21-24z"/></svg>`;
+S.q = ""; S.memoN = 20;
 const facChars = () => S.chars.filter(c => c.faction === S.fac);
 
 // ---------- 화면 ----------
@@ -24,10 +25,11 @@ function world(s) {
       <div class="tg-b"><div class="org-ban" data-pos="fac|${k}|bannerPos" ${bgAttr(f.banner, f.bannerPos)}><small>${esc(f.tagline)}</small><strong>${esc(f.name)}</strong><span>${esc(f.est)}</span></div>
         <div class="org-txt">${fmt(f.summary)}<button class="org-go" data-a="go:${k}">진영 페이지 보기 →</button> ${ed("forg:" + k)}</div></div>
     </article>`; }).join("");
+  const day = d => { const [y, ...r] = String(d || "").trim().split(/\s+/); return `<b>${esc(y)}</b> ${esc(r.join(" "))}`; };
   const eras = (s.eras || []).map((e, i) => `
-    <div class="era ${i % 2 ? "r" : ""}"><div class="era-l"><h4>${esc(e.name)}<small>${esc(e.en)} · ${esc(e.range)}</small></h4>
-      <ul>${(e.events || []).map(v => `<li><time>${esc(v.date)}</time><b>${esc(v.title)}</b>${v.desc ? `<p>${inl(v.desc)}</p>` : ""}</li>`).join("")}</ul></div>
-      <div class="era-img" data-pos="site|eras.${i}.imgPos" ${bgAttr(e.img, e.imgPos)}></div></div>`).join("");
+    <div class="era ${i % 2 ? "r" : ""}" data-pos="site|eras.${i}.imgPos"><div class="era-img pos-t" ${bgAttr(e.img, e.imgPos)}></div>
+      <h4>${esc(e.name)}<small>${esc(e.en)} · ${esc(e.range)}</small></h4>
+      <ol class="tl">${(e.events || []).map(v => `<li><time>${day(v.date)}</time><div class="tl-t"><strong>${esc(v.title)}</strong>${fmt(v.desc)}</div></li>`).join("")}</ol></div>`).join("");
   const syn = (s.syn || []).map(r => `<div class="syn-row ${/^[—–-]/.test(r.year || "") ? "gap" : ""}"><div class="syn-y"><b>${esc(r.year)}</b><small>${esc(r.label)}</small></div><div class="syn-t">${fmt(r.body)}</div></div>`).join("");
   return `<section id="world" class="sec wrap">
     <div class="sec-h"><div><h2>Synopsis</h2></div><div class="r">시놉시스 ${ed("syn")}</div></div>
@@ -50,7 +52,7 @@ function faction(f) {
     <div class="sec-h"><div><h2>Overview</h2></div><div class="r">조직 개요 ${ed("fov")}</div></div>
     ${(f.overview || []).map(o => `<div class="ov"><h4>${esc(o.title)}<small>${esc(o.en)}</small></h4>${fmt(o.body)}</div>`).join("") || `<p class="empty">개요 항목이 없습니다.</p>`}
     <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${ed("fmap")}</div></div>
-    <div class="map" data-pos="fac|${k}|mapImgPos" ${bgAttr(f.mapImg, f.mapImgPos)}>${f.mapImg ? "" : "MAP · 이미지 준비 중"}</div>
+    <div class="map ${f.mapImg ? "has" : ""}">${f.mapImg ? `<img data-img="${esc(f.mapImg)}" alt="">` : "MAP · 이미지 준비 중"}</div>
     <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
@@ -87,34 +89,43 @@ function people() {
     ${body}
     <div id="file"></div></section>`;
 }
-const memoTags = m => {
-  const c = m.charId && S.chars.find(x => x.id === m.charId);
-  return [...new Set([m.charId ? (c ? (c.name || c.num) : null) : "세계관", ...String(m.tags || "").split(",").map(t => t.trim())].filter(Boolean))];
-};
-const memoHtml = m => `<article class="memo"><div class="tags">${memoTags(m).map(t => `<span>#${esc(t)}</span>`).join("")} ${ed("memo:" + m.id)}</div>
-  ${m.title ? `<h4>${esc(m.title)}</h4>` : ""}${fmt(m.body)}</article>`;
+const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.name || c.num) : null; }), ...(m.tags || [])].filter(Boolean))];
+const memoDate = m => m.at ? new Date(m.at).toLocaleDateString("sv").replaceAll("-", ".") : "";
+const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data-a="tog"><h4>${esc(m.title || String(m.body || "").slice(0, 40) || "제목 없음")}</h4>
+    <span class="tags">${memoTags(m).map(t => `<span>#${esc(t)}</span>`).join("")}</span><time>${memoDate(m)}</time><span class="plus">+</span></button>
+  <div class="tg-b">${fmt(m.body)}
+    ${(m.imgs || []).some(x => x.img) ? `<div class="agrid">${m.imgs.filter(x => x.img).map(x => `<figure data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div></figure>`).join("")}</div>` : ""}
+    <p>${ed("memo:" + m.id)}</p></div></article>`;
+function memoList() {
+  const q = (S.q || "").trim().toLowerCase();
+  const list = S.memos.filter(m => (!S.tag || memoTags(m).includes(S.tag)) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
+  return (list.slice(0, S.memoN).map(memoHtml).join("") || `<p class="empty">메모가 없습니다.</p>`)
+    + (list.length > S.memoN ? `<button class="btn more" data-a="more">더 보기 (${list.length - S.memoN})</button>` : "");
+}
+function drawMemos() { const box = document.getElementById("memos"); box.innerHTML = memoList(); hydrate(box); }
 function trivia() {
   const tags = [...new Set(S.memos.flatMap(memoTags))];
   if (S.tag && !tags.includes(S.tag)) S.tag = "";
-  const list = S.memos.filter(m => !S.tag || memoTags(m).includes(S.tag));
   return `<section id="trivia" class="sec wrap">
-    <div class="sec-h"><div><h2>Trivia</h2><small>작가 메모 · ${S.memos.length}</small></div><div class="r">${ed("newmemo:", "+ 메모 추가")}</div></div>
+    <div class="sec-h"><div><h2>Trivia</h2><small>작가 메모 · ${S.memos.length} · 제목을 누르면 펼쳐집니다</small></div><div class="r">${ed("newmemo", "+ 메모 추가")}</div></div>
+    <input id="memo-q" class="memo-q" placeholder="제목 · 내용 검색" value="${esc(S.q)}">
     <div class="chips"><button class="${S.tag ? "" : "on"}" data-a="tag:">전체</button>${tags.map(t => `<button class="${t === S.tag ? "on" : ""}" data-a="tag:${esc(t)}">#${esc(t)}</button>`).join("")}</div>
-    <div id="memos">${list.map(memoHtml).join("") || `<p class="empty">메모가 없습니다.</p>`}</div>
+    <div id="memos">${memoList()}</div>
     <footer class="end"><div class="barcode"></div><span>© AFTERMESS</span></footer></section>`;
 }
 function fileHtml(c) {
-  const tab = (k, l) => `<button class="${S.tab === k ? "on" : ""}" data-a="tab:${k}">${l}</button>`;
+  const has = c.useProfile !== false, cur = !has && S.tab === "profile" ? "assets" : S.tab;
+  const tab = (k, l) => `<button class="${cur === k ? "on" : ""}" data-a="tab:${k}">${l}</button>`;
   let body;
-  if (S.tab === "assets") {
+  if (cur === "assets") {
     const a = (c.assets || []).filter(x => x.img);
     body = `<div class="file-pad">${a.length ? `<div class="agrid">${a.map(x => `<figure data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div>${x.cap ? `<figcaption>${esc(x.cap)}</figcaption>` : ""}</figure>`).join("")}</div>` : `<p class="empty">등록된 에셋이 없습니다.</p>`}
       <p style="margin-top:14px">${ed("assets:" + c.id, "에셋 편집")}</p></div>`;
-  } else if (S.tab === "memo") {
-    const ms = S.memos.filter(m => m.charId === c.id);
-    body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다.</p>`}<p style="margin-top:14px">${ed("newmemo:" + c.id, "+ 메모 추가")}</p></div>`;
+  } else if (cur === "memo") {
+    const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
+    body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
   } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos` });
-  return `<div class="file"><div class="tabs">${tab("profile", esc(c.num || c.name || "PROFILE"))}${tab("assets", "ASSET")}${tab("memo", "MEMO")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
+  return `<div class="file"><div class="tabs">${has ? tab("profile", esc(c.num || c.name || "PROFILE")) : ""}${tab("assets", "ASSET")}${tab("memo", "MEMO")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
 }
 function drawFile(scroll) {
   const box = document.getElementById("file"); if (!box) return;
@@ -139,7 +150,7 @@ const charSchema = () => {
   const gs = (S.factions[fac].groups || []).filter(g => g.name);
   const posHint = "저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다.";
   return [
-    { type: "head", label: "목록 카드" },
+    { type: "head", label: "목록 카드", open: true },
     T("name", "이름 (카드에 표시)", "SEVEN"),
     ...(gs.length ? [{ k: "group", label: "그룹", type: "select", options: [["", "(미분류)"], ...gs.map(g => [g.name, g.name])] }] : []),
     ...(fac === "ww" ? [T("cardNo", "NUMBER (카드 앞면 좌상단)", "07")] : []),
@@ -152,8 +163,9 @@ const charSchema = () => {
     ...PROFILE_FIELDS];
 };
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
-  { k: "charId", label: "분류", type: "select", options: [["", "세계관 (캐릭터 없음)"], ...S.chars.map(c => [c.id, `캐릭터: ${c.name || c.num || "이름 없음"}`])] },
-  { k: "tags", label: "추가 태그 (쉼표로 구분)", ph: "설정, 비하인드", hint: "캐릭터를 고르면 캐릭터 이름 태그가, 아니면 '세계관' 태그가 자동으로 붙습니다." }];
+  { k: "imgs", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }] },
+  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", options: S.chars.map(c => [c.id, c.name || c.num || "이름 없음"]) },
+  { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
   openForm({ title: isNew ? "메모 추가" : "메모 편집", schema: memoSchema(), data: m,
     onSave: async v => { await saveMemo(v); render(); },
@@ -163,7 +175,7 @@ const EDIT = {
   hero: () => openForm({ title: "메인 화면", schema: [{ k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img", hint: "저장한 뒤 사진을 더블클릭하면 위치를 조정할 수 있습니다." }, { k: "logo", label: "로고 이미지", type: "img", hint: "저장한 뒤 로고를 더블클릭하면 드래그로 위치, 휠로 크기를 조정할 수 있습니다." }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   syn: () => openForm({ title: "시놉시스", schema: [{ k: "syn", label: "연도별 칸", type: "list", item: "칸", fields: [T("year", "연도", "2030"), T("label", "연도 아래 작은 글", "핵전쟁 발발"), A("body", "옆에 들어갈 글")] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   timeline: () => openForm({ title: "타임라인", schema: [{ k: "eras", label: "시대", type: "list", item: "시대", fields: [T("name", "이름", "붕괴기"), T("en", "영문", "COLLAPSE"), T("range", "기간", "2030 — 2038"), { k: "img", label: "이미지", type: "img" },
-    { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), T("desc", "설명 (선택)")] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
+    { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), A("desc", "설명 (선택)")] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   forg: k => openForm({ title: `${S.factions[k].name} · World 요약`, schema: [T("short", "짧은 이름", "W.W"), { k: "tagline", label: "좌측 상단 문구", type: "area", hint: "예: Dead Zone / Insurgent Cell" }, { k: "est", label: "설립 정보", type: "area", hint: "예: EST. 2071. 12. 25 / Volgograd, Russia" }, { k: "banner", label: "배너 이미지", type: "img" }, A("summary", "요약 설명")], data: S.factions[k], onSave: async v => { await saveFaction(k, v); render(); } }),
   fgroups: () => facForm("캐릭터 그룹", [{ k: "groups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "본대"), T("en", "영문", "MAIN ELEMENT")] }]),
   fhead: () => facForm("진영 머리말", [T("name", "진영 이름"), T("sub", "부제", "// classified, HQ COMMANDER"), A("quote", "인용문 (영문)"), A("quoteKo", "인용문 (번역)"), T("quoteSrc", "출처", "INTERCEPT 2078 / UNVERIFIED")]),
@@ -185,7 +197,7 @@ const EDIT = {
     openForm({ title: `에셋 · ${c.name || ""}`, schema: [{ k: "assets", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }, T("cap", "설명 (선택)")] }], data: c, onSave: async v => { await saveChar(v); render(); } });
   },
   memo: id => editMemo(S.memos.find(m => m.id === id)),
-  newmemo: charId => editMemo({ id: newId("m"), title: "", body: "", charId: charId || "", tags: "", at: Date.now() }, true)
+  newmemo: () => editMemo({ id: newId("m"), title: "", body: "", imgs: [], charIds: [], tags: [], at: Date.now() }, true)
 };
 
 // ---------- 동작 ----------
@@ -228,13 +240,20 @@ const ACT = {
     all.forEach(x => x.classList.toggle("open", !open));
   },
   char(id) {
-    S.openChar = S.openChar === id ? null : id; S.tab = "profile";
+    S.openChar = S.openChar === id ? null : id;
+    S.tab = S.chars.find(c => c.id === id)?.useProfile === false ? "assets" : "profile";
     document.querySelectorAll(".pcard").forEach(el => el.classList.toggle("flip", el.dataset.id === S.openChar));
     document.querySelectorAll(".lcard").forEach(el => el.classList.toggle("sel", el.dataset.id === S.openChar));
-    drawFile(true);
+    drawFile();
   },
   tab(k) { S.tab = k; drawFile(); },
-  tag(t) { S.tag = t; render(); document.getElementById("trivia").scrollIntoView(); },
+  tag(t, el) {
+    S.tag = t; S.memoN = 20;
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    drawMemos();
+  },
+  more() { S.memoN += 20; drawMemos(); },
+  secret(_, el) { toggleSecret(el); },
   full(id) { lightbox(id); },
   trk(_, el) { toggleTrack(el); },
   trkopen(_, el) { toggleTrackText(el); },
@@ -430,4 +449,9 @@ document.addEventListener("dragend", async () => {
   try { for (const c of changed) await saveChar(c); toast("순서를 저장했습니다"); }
   catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); }
   render();
+});
+
+document.addEventListener("input", e => {
+  if (e.target.id !== "memo-q") return;
+  S.q = e.target.value; S.memoN = 20; drawMemos();
 });

@@ -33,7 +33,7 @@ function form() {
   box.innerHTML = `<p class="ed-note">입력한 내용은 이 브라우저에만 자동 저장됩니다. 서버에는 올라가지 않습니다.</p>`;
   box.append(buildFields([
     { k: "faction", label: "포인트 컬러", type: "select", options: [["ww", "레드 (W.W)"], ["milgram", "블루 (MILGRAM)"], ["ledger", "옐로 (LEDGER)"]] },
-    ...PROFILE_FIELDS], data, { local: true, change: changed }));
+    ...PROFILE_FIELDS.filter(f => !f.site)], data, { local: true, change: changed }));
 }
 function download(name, blob) {
   const a = document.createElement("a");

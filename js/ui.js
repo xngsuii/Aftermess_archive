@@ -4,8 +4,20 @@ import { getImage, saveImage, delImage, compress, collectIds } from "./store.js"
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // **굵게**, __밑줄 강조__
 export const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/__(.+?)__/g, "<u>$1</u>").replace(/\n/g, "<br>");
-export const fmt = s => String(s ?? "").trim() ? String(s).trim().split(/\n{2,}/).map(p => `<p>${inl(p)}</p>`).join("") : "";
-export const FMT_HINT = "**굵게**, __밑줄 강조__ 를 쓸 수 있고, 빈 줄로 문단을 나눕니다.";
+// 줄바꿈마다 문단. 빈 줄을 두면 간격이 더 벌어지고, > 로 시작하는 줄은 인용구.
+export const fmt = s => {
+  let out = "", gap = false, quote = [], quoteGap = false;
+  const flush = () => { if (quote.length) { out += `<blockquote class="bq${quoteGap ? " sp" : ""}">${quote.join("<br>")}</blockquote>`; quote = []; } };
+  for (const raw of String(s ?? "").replace(/\r/g, "").split("\n")) {
+    const l = raw.trim();
+    if (!l) { flush(); gap = true; continue; }
+    if (l.startsWith(">")) { if (!quote.length) quoteGap = gap && !!out; quote.push(inl(l.replace(/^>\s?/, ""))); gap = false; continue; }
+    flush(); out += `<p${gap && out ? ' class="sp"' : ""}>${inl(l)}</p>`; gap = false;
+  }
+  flush();
+  return out;
+};
+export const FMT_HINT = "Enter로 문단을 나눕니다. 빈 줄을 넣으면 간격이 더 벌어집니다.";
 
 // 이미지: data URL이면 바로, 아니면 화면 근처에 왔을 때 Firestore에서 불러온다
 export const imgAttr = v => !v ? "" : v.startsWith("data:") ? `src="${v}"` : `data-img="${esc(v)}"`;
@@ -50,14 +62,40 @@ export async function lightbox(id) {
 
 const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-// schema 항목: {k, label, type: text|area|select|img|inline|list|head, ...}
+// 글 입력 칸 위의 서식 버튼: 선택한 글자를 마커로 감싼다
+function formatBar(input, onChange, withQuote) {
+  const bar = h("div", "fbar");
+  const set = (v, a, b) => { input.value = v; input.focus(); input.setSelectionRange(a, b); onChange(); };
+  const wrap = mark => {
+    const s = input.selectionStart, e = input.selectionEnd, v = input.value, sel = v.slice(s, e) || "텍스트";
+    set(v.slice(0, s) + mark + sel + mark + v.slice(e), s + mark.length, s + mark.length + sel.length);
+  };
+  const quote = () => {
+    const v = input.value, s = v.lastIndexOf("\n", input.selectionStart - 1) + 1, e = input.selectionEnd;
+    const block = v.slice(s, e).split("\n").map(l => l.startsWith(">") ? l : "> " + l).join("\n");
+    set(v.slice(0, s) + block + v.slice(e), s, s + block.length);
+  };
+  const mk = (txt, title, fn) => { const b = h("button", "", txt); b.type = "button"; b.title = title; b.onclick = fn; bar.append(b); };
+  mk("B", "굵게", () => wrap("**"));
+  mk("U", "밑줄 강조", () => wrap("__"));
+  if (withQuote) mk("❝ 인용", "인용구", quote);
+  return bar;
+}
+
+// schema 항목: {k, label, type: text|area|select|check|pills|img|inline|list|head, ...}
+// head 는 접었다 펼 수 있는 묶음을 시작한다.
 export function buildFields(schema, obj, ctx = {}) {
   const frag = document.createDocumentFragment();
+  let target = frag;
   const ch = () => ctx.change && ctx.change();
   for (const f of schema) {
-    if (f.type === "head") { frag.append(h("div", "fhd", f.label)); continue; }
-    const w = h("div", "fld");
-    w.append(h("label", "", f.label));
+    if (f.type === "head") {
+      const d = h("details", "fsec"); d.open = !!f.open;
+      d.append(h("summary", "", f.label)); frag.append(d); target = d;
+      continue;
+    }
+    const w = h("div", "fld"), lab = h("label", "", f.label);
+    w.append(lab);
     if (f.type === "list") {
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];
       const box = h("div");
@@ -103,14 +141,47 @@ export function buildFields(schema, obj, ctx = {}) {
       f.options.forEach(([v, l]) => { const o = h("option", "", l); o.value = v; s.append(o); });
       s.value = obj[f.k] ?? ""; s.onchange = () => { obj[f.k] = s.value; ch(); };
       w.append(s);
+    } else if (f.type === "check") {
+      const i = h("input"); i.type = "checkbox";
+      i.checked = obj[f.k] === undefined ? !!f.def : !!obj[f.k];
+      obj[f.k] = i.checked; i.onchange = () => { obj[f.k] = i.checked; ch(); };
+      w.classList.add("chk"); lab.prepend(i);
+    } else if (f.type === "pills") {
+      // 눌러서 켜고 끄는 알약. f.add 면 새 값을 직접 추가할 수 있다.
+      if (!Array.isArray(obj[f.k])) obj[f.k] = [];
+      const box = h("div", "pills"), opts = [...f.options];
+      obj[f.k].forEach(v => { if (!opts.some(o => o[0] === v)) opts.push([v, v]); });
+      const draw = () => {
+        box.innerHTML = "";
+        opts.forEach(([v, l]) => {
+          const b = h("button", "pill" + (obj[f.k].includes(v) ? " on" : ""), l); b.type = "button";
+          b.onclick = () => { const a = obj[f.k], i = a.indexOf(v); if (i < 0) a.push(v); else a.splice(i, 1); draw(); ch(); };
+          box.append(b);
+        });
+        if (f.add) {
+          const inp = h("input", "pill-in"); inp.placeholder = "새 태그 입력 후 Enter";
+          inp.onkeydown = e => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            const v = inp.value.trim(); if (!v) return;
+            if (!opts.some(o => o[0] === v)) opts.push([v, v]);
+            if (!obj[f.k].includes(v)) obj[f.k].push(v);
+            draw(); ch(); box.querySelector(".pill-in").focus();
+          };
+          box.append(inp);
+        }
+        if (!opts.length && !f.add) box.append(h("span", "hint", "선택할 항목이 없습니다."));
+      };
+      draw(); w.append(box);
     } else {
-      const i = h(f.type === "area" ? "textarea" : "input");
+      const area = f.type === "area", i = h(area ? "textarea" : "input");
       i.value = obj[f.k] ?? ""; if (f.ph) i.placeholder = f.ph;
       i.oninput = () => { obj[f.k] = i.value; ch(); };
+      if (area || f.fmt) w.append(formatBar(i, () => { obj[f.k] = i.value; ch(); }, area));
       w.append(i);
     }
     if (f.hint || f.type === "area") w.append(h("div", "hint", f.hint || FMT_HINT));
-    frag.append(w);
+    target.append(w);
   }
   return frag;
 }

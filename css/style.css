@@ -314,3 +314,57 @@ body[data-faction="milgram"] .unit:first-child{grid-column:1/-1;min-height:300px
 .pgrid .empty{grid-column:1/-1}
 .pgrid:has(.pcard) .empty,.lgrid:has(.lcard) .empty{display:none}
 .dragging{opacity:.3}
+
+/* ---- v6 ---- */
+.era{display:block;position:relative;padding:6px 0 10px;margin-bottom:70px;min-height:280px}
+.era-img{position:absolute;top:0;bottom:0;right:0;left:auto;width:62%;min-height:0;z-index:0}
+.era.r .era-img{right:auto;left:0}
+.era-img::after{background:linear-gradient(to right,var(--bg),transparent 80%),linear-gradient(to bottom,var(--bg),transparent 16%),linear-gradient(to top,var(--bg),transparent 16%)}
+.era.r .era-img::after{background:linear-gradient(to left,var(--bg),transparent 80%),linear-gradient(to bottom,var(--bg),transparent 16%),linear-gradient(to top,var(--bg),transparent 16%)}
+.era>h4,.era .tl{position:relative;z-index:1}
+.era.r>h4{text-align:right}
+.era .tl{list-style:none;margin:0;padding:0}
+.era .tl li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 28px;margin:0;padding:0 0 24px;position:relative;font-size:15px}
+.era .tl li:last-child{padding-bottom:0}
+.era .tl li::after{content:"";position:absolute;left:110px;top:12px;bottom:-12px;width:1px;background:var(--line)}
+.era .tl li:last-child::after{display:none}
+.era .tl time{margin:0;padding-top:3px;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--fg3);white-space:nowrap}
+.era .tl time b{color:var(--fg)}
+.era li b::before{display:none}
+.era .tl-t{position:relative;min-width:0}
+.era .tl-t::before{content:"";position:absolute;left:-17px;top:10px;width:6px;height:6px;background:var(--fg);z-index:1}
+.era .tl li:first-child .tl-t::before,.era .tl li:last-child .tl-t::before{background:var(--accent)}
+.era .tl strong{display:block;font-size:16px;font-weight:800}
+.era .tl p{font-size:13px;color:var(--fg2);margin:6px 0 0;max-width:430px}
+.era.r .tl li{grid-template-columns:minmax(0,1fr) 96px;text-align:right}
+.era.r .tl time{order:2;text-align:left}
+.era.r .tl li::after{left:auto;right:110px}
+.era.r .tl-t::before{left:auto;right:-17px}
+.era.r .tl p{margin-left:auto}
+.map.has{aspect-ratio:auto;display:block;border:0;background:none}
+.map img{width:100%;height:auto}
+.fbar{display:flex;gap:4px;margin-bottom:4px}
+.fbar button{min-width:28px;height:24px;padding:0 8px;border:1px solid var(--line);font-size:12px;font-weight:800;color:var(--fg2)}
+.fbar button:hover{color:var(--fg);border-color:var(--fg2)}
+.fsec{border:1px solid var(--line);margin-bottom:10px}
+.fsec>summary{cursor:pointer;padding:9px 12px;font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--accent);user-select:none}
+.fsec[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+.fsec>.fld{margin-left:12px;margin-right:12px}
+.fld.chk>label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg);cursor:pointer;margin:0}
+.fld input[type=checkbox]{width:16px!important;height:16px;padding:0!important;accent-color:var(--accent)}
+.pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{font-size:12px;font-weight:700;padding:4px 12px;border:1px solid var(--line);border-radius:99px;color:var(--fg2)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.fld .pill-in{width:170px!important;border-radius:99px!important;padding:4px 12px!important;font-size:12px!important}
+.memo{padding:0}
+.memo-h{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 0}
+.memo-h h4{flex:1;min-width:0;margin:0;font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.memo .tags{margin:0;flex-wrap:nowrap;white-space:nowrap;max-width:45%;overflow:hidden}
+.memo time{font-size:10px;font-weight:700;color:var(--fg3);letter-spacing:.06em}
+.memo .plus{width:22px;height:22px;font-size:13px}
+.memo .tg-b{padding:2px 0 22px}
+.memo .agrid{margin-top:14px}
+.memo .tg-b>p:last-child{margin-top:12px}
+.memo-q{width:100%;background:var(--bg2);color:var(--fg);border:1px solid var(--line);padding:9px 12px;font:inherit;font-size:13px;margin-bottom:12px}
+.more{display:block;margin:18px auto 0}
+@media(max-width:720px){.era-img{width:100%;opacity:.45}.era .tl p{max-width:none}}
