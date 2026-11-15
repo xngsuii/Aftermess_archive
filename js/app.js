@@ -18,7 +18,7 @@ const facChars = () => S.chars.filter(c => c.faction === S.fac);
 function hero(s) {
   return `<section id="top" class="hero" data-pos="site|heroImgPos"><div class="hero-bg pos-t" ${bgAttr(s.heroImg, s.heroImgPos)}></div>${ed("hero", "메인 편집")}
     <p class="kicker">${inl(s.kicker)}</p>
-    <nav class="hmenu ${S.view === "faction" ? "open" : ""}">
+    <nav class="hmenu open">
       <button class="${S.view === "world" ? "on" : ""}" data-a="view:world">WORLD</button>
       <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf">FACTION</button>
       <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
@@ -155,6 +155,7 @@ function drawFile(scroll) {
 function render() {
   document.body.dataset.faction = document.documentElement.dataset.faction = S.fac;
   document.body.dataset.view = S.view || "";
+  document.getElementById("facsw").innerHTML = FAC.map(k => `<button data-faction="${k}" class="${S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(S.factions[k].short || S.factions[k].name)}</button>`).join("");
   app.innerHTML = hero(S.site) + (S.view === "world" ? world(S.site) : S.view === "faction" ? faction(S.factions[S.fac]) + people() : S.view === "trivia" ? trivia() : "");
   drawFile();
   hydrate(app);

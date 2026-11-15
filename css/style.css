@@ -491,3 +491,10 @@ body.scrolled #totop{opacity:1;pointer-events:auto}
 .hmenu>button{font-weight:900}
 .hmenu>button:hover,.hmenu>button.on{border-bottom-color:var(--accent)}
 .memo .tg-b .tags{max-width:none;overflow:visible;white-space:normal;flex-wrap:wrap;gap:6px 12px;margin-top:16px}
+/* v17: 맨 위로 버튼 위에 뜨는 진영 전환 (FACTION 화면에서만) */
+#facsw{position:fixed;right:22px;bottom:76px;z-index:19;display:flex;flex-direction:column;align-items:flex-end;gap:4px;opacity:0;pointer-events:none;transition:opacity .25s}
+body.scrolled[data-view="faction"] #facsw{opacity:1;pointer-events:auto}
+#facsw button{height:30px;padding:0 11px;font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--fg3);border:1px solid var(--line);border-right:2px solid transparent;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(8px);white-space:nowrap;transition:color .2s,border-color .2s}
+#facsw button:hover{color:var(--fg)}
+#facsw button.on{color:var(--fg);border-right-color:var(--accent)}
+body.in-editor #facsw,body.in-editor #totop{display:none}
