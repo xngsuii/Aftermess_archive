@@ -90,7 +90,14 @@ const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) 
 // 글 입력 칸 위의 서식 버튼: 선택한 글자를 마커로 감싼다
 function formatBar(input, onChange, withQuote) {
   const bar = h("div", "fbar");
-  const set = (v, a, b) => { input.value = v; input.focus(); input.setSelectionRange(a, b); onChange(); };
+  // 글을 바꿔 넣으면 브라우저가 입력 칸을 맨 아래로 내려 버리므로, 보던 위치를 기억했다가 되돌린다
+  const set = (v, a, b) => {
+    const st = input.scrollTop, ups = [];
+    for (let p = input.parentElement; p; p = p.parentElement) ups.push([p, p.scrollTop]);
+    input.value = v; input.focus({ preventScroll: true }); input.setSelectionRange(a, b);
+    input.scrollTop = st; ups.forEach(([p, t]) => { if (p.scrollTop !== t) p.scrollTop = t; });
+    onChange();
+  };
   const wrap = (a, b = a) => {
     const s = input.selectionStart, e = input.selectionEnd, v = input.value, sel = v.slice(s, e) || "텍스트";
     set(v.slice(0, s) + a + sel + b + v.slice(e), s + a.length, s + a.length + sel.length);

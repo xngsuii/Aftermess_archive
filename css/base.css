@@ -26,3 +26,8 @@ img{max-width:100%;display:block}
 .tc-g{color:var(--fg3)}
 .tc-w{color:var(--fg)}
 .tc-r{color:var(--accent)}
+/* 스크롤바: 바탕은 배경색, 막대는 빨강 */
+*{scrollbar-width:thin;scrollbar-color:var(--c-ww) var(--bg)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--c-ww)}
