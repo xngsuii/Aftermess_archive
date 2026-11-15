@@ -39,11 +39,11 @@ function world(s) {
     <div class="orgs">${orgs}</div></section>`;
 }
 function faction(f) {
-  const k = S.fac;
+  const k = S.fac, pts = f.points || [], stats = (f.mapStats || []).filter(s => s.k || s.v);
   const chron = k === "ww" ? "" : `<div class="sec-h"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
       <div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="togall">+</button> ${ed("fchron")}</div></div>
-    <div class="chrs">${(f.chron || []).map(c => `<article class="chr tg"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><h4>${esc(c.title)}</h4></button>
-      <div class="tg-b">${fmt(c.body)}</div></article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>`;
+    <div class="chrs">${(f.chron || []).map(c => `<article class="chr tg ${c.hot ? "hot" : ""}"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><i class="arr">↘</i><h4>${esc(c.title)}</h4></button>
+      ${c.body ? `<div class="tg-b"><div>${fmt(c.body)}</div></div>` : ""}</article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>`;
   return `<section id="faction" class="sec wrap">
     <nav class="fsel">${FAC.map(x => `<button data-faction="${x}" class="${x === k ? "on" : ""}" data-a="fac:${x}">${esc(S.factions[x].short || S.factions[x].name)}</button>`).join("")}</nav>
     <p class="kicker">AFTERMESS<br>2080 NEW ERA</p>
@@ -51,8 +51,10 @@ function faction(f) {
     ${f.quote || f.quoteKo ? `<blockquote class="quote"><div class="en">${fmt(f.quote)}</div><div class="ko">${fmt(f.quoteKo)}</div><cite>${esc(f.quoteSrc)}</cite></blockquote>` : ""}
     <div class="sec-h"><div><h2>Overview</h2></div><div class="r">조직 개요 ${ed("fov")}</div></div>
     ${(f.overview || []).map(o => `<div class="ov"><h4>${esc(o.title)}<small>${esc(o.en)}</small></h4>${fmt(o.body)}</div>`).join("") || `<p class="empty">개요 항목이 없습니다.</p>`}
-    <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${ed("fmap")}</div></div>
-    <div class="map ${f.mapImg ? "has" : ""}">${f.mapImg ? `<img data-img="${esc(f.mapImg)}" alt="">` : "MAP · 이미지 준비 중"}</div>
+    <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${esc(f.mapLabel || (pts.length ? pts.length + " SITES" : ""))} ${ed("fmap")}</div></div>
+    <div class="map ${f.mapImg ? "has" : ""}">${f.mapImg ? `<img data-img="${esc(f.mapImg)}" alt="">` : "MAP · 이미지 준비 중"}
+      ${pts.map((p, i) => `<button class="pt ${p.hot ? "hot" : ""} ${p.side === "l" ? "l" : ""}" style="left:${Number(p.x ?? 50)}%;top:${Number(p.y ?? 50)}%" data-a="pt:${i}"><i></i><b>${esc(p.label)}</b></button>`).join("")}</div>
+    ${stats.length ? `<div class="mstats">${stats.map(s => `<span>${esc(s.k)}<b>${esc(s.v)}</b></span>`).join("")}</div>` : ""}
     <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
@@ -181,9 +183,15 @@ const EDIT = {
   fgroups: () => facForm("캐릭터 그룹", [{ k: "groups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "본대"), T("en", "영문", "MAIN ELEMENT")] }]),
   fhead: () => facForm("진영 머리말", [T("name", "진영 이름"), T("sub", "부제", "// classified, HQ COMMANDER"), A("quote", "인용문 (영문)"), A("quoteKo", "인용문 (번역)"), T("quoteSrc", "출처", "INTERCEPT 2078 / UNVERIFIED")]),
   fov: () => facForm("Overview", [{ k: "overview", label: "항목", type: "list", fields: [T("title", "제목", "연혁"), T("en", "영문", "ORIGIN"), A("body", "내용")] }]),
-  fmap: () => facForm("지도 · 도면", [T("mapTitle", "섹션 제목", "Territory"), T("mapSub", "설명"), { k: "mapImg", label: "지도 이미지", type: "img" }]),
+  fmap: () => facForm("지도 · 도면", [T("mapTitle", "섹션 제목", "Territory"), T("mapSub", "설명"), { k: "mapImg", label: "지도 이미지", type: "img" },
+    T("mapLabel", "우측 표시 글 (비우면 지점 수 자동 표시)", "5 SITES"),
+    { k: "points", label: "지점 (위치는 저장한 뒤 지도에서 지점을 끌어서 옮깁니다)", type: "list", item: "지점", fold: ["label", "title"], fields: [
+      T("label", "지도 위 이름", "VOLGOGRAD"), { k: "side", label: "이름 위치", type: "select", options: [["", "점 오른쪽"], ["l", "점 왼쪽"]] },
+      { k: "hot", type: "check", def: false, label: "강조 (점을 진영 색으로)" },
+      T("title", "설명 창 제목", "볼고그라드 본영"), T("tag", "제목 옆 태그", "HQ · 본대"), T("sub", "굵은 한 줄", "중앙지휘소 · 통신탑 · 보급창 3호"), A("desc", "설명")] },
+    { k: "mapStats", label: "지도 아래 수치", type: "list", item: "수치", fields: [T("k", "항목", "실효 지배"), T("v", "값", "341,000 km²")] }]),
   funits: () => facForm("조직 구성", [T("unitsTitle", "섹션 제목", "Squad"), T("unitsSub", "설명"), T("unitsLabel", "우측 표시 글 (비우면 개수 자동 표시)", "3 SQD"), { k: "units", label: "조직", type: "list", item: "조직", fields: [T("code", "코드", "SQD. 01"), T("tag", "우측 태그", "ASSAULT"), T("name", "이름", "강습타격대"), T("sub", "부가 설명"), { k: "img", label: "이미지", type: "img" }, A("body", "펼쳤을 때 내용")] }]),
-  fchron: () => facForm("Chronicle", [T("chronTitle", "섹션 제목"), T("chronSub", "설명", "주요 작전 연표 · 2071 — 2080"), { k: "chron", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2071. 11. 09"), T("tag", "우측 태그", "FIRST RECORD"), T("title", "제목"), A("body", "내용")] }]),
+  fchron: () => facForm("Chronicle", [T("chronTitle", "섹션 제목"), T("chronSub", "설명", "주요 작전 연표 · 2071 — 2080"), { k: "chron", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2071. 11. 09"), T("tag", "우측 태그", "FIRST RECORD"), T("title", "제목"), { k: "hot", type: "check", def: false, label: "강조 (눈금과 태그를 진영 색으로)" }, A("body", "내용")], fold: ["date", "title"] }]),
   newchar: () => {
     const c = { id: newId("c"), faction: S.fac, order: facChars().reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1, affil: [], tracks: [], assets: [] };
     openForm({ title: `캐릭터 추가 · ${S.factions[S.fac].name}`, schema: charSchema(), data: c, onSave: async v => { await saveChar(v); S.openChar = v.id; S.tab = "profile"; render(); } });
@@ -266,12 +274,28 @@ const ACT = {
     catch (e) { console.error(e); toast("삭제하지 못했습니다. " + why(e)); }
     drawFile();
   },
+  pt(i, el) {
+    if (ptMoved) return;
+    const map = el.closest(".map"), old = map.querySelector(".pt-pop"), same = old?.dataset.i === i;
+    old?.remove(); map.querySelectorAll(".pt.on").forEach(x => x.classList.remove("on"));
+    const p = (S.factions[S.fac].points || [])[i];
+    if (same || !p) return;
+    el.classList.add("on");
+    const pop = document.createElement("div"); pop.className = "pt-pop"; pop.dataset.i = i;
+    pop.innerHTML = `<h5>${esc(p.title || p.label)}<small>${esc(p.tag)}</small></h5>${p.sub ? `<strong>${esc(p.sub)}</strong>` : ""}${fmt(p.desc)}`;
+    map.append(pop);
+    const m = map.getBoundingClientRect(), d = el.querySelector("i").getBoundingClientRect(), w = pop.offsetWidth, hh = pop.offsetHeight;
+    const cx = d.left + d.width / 2 - m.left, cy = d.top - m.top;
+    let y = cy - hh - 12; if (y < 8) y = cy + d.height + 12;
+    pop.style.left = Math.max(8, Math.min(m.width - w - 8, cx - w / 2)) + "px"; pop.style.top = y + "px";
+  },
   trk(_, el) { toggleTrack(el); },
   trkopen(_, el) { toggleTrackText(el); },
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
 document.addEventListener("click", e => {
   if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }
+  if (!e.target.closest(".pt,.pt-pop")) { document.querySelector(".pt-pop")?.remove(); document.querySelector(".pt.on")?.classList.remove("on"); }
   const el = e.target.closest("[data-a]"); if (!el) return;
   const a = el.dataset.a, i = a.indexOf(":"), name = i < 0 ? a : a.slice(0, i);
   if (name === "edit") e.stopPropagation();
@@ -410,6 +434,28 @@ addEventListener("wheel", e => {
   if (!adj?.move) return;
   e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, 100); applyAdj();
 }, { passive: false });
+
+// ---------- 지도 지점: 로그인 상태에서 지점을 끌면 위치가 바뀌고, 놓으면 저장된다 ----------
+let ptDrag = null, ptMoved = false;
+document.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".pt"); if (!el || !S.user || adj) return;
+  ptDrag = { el, sx: e.clientX, sy: e.clientY, on: false };
+});
+document.addEventListener("pointermove", e => {
+  const d = ptDrag; if (!d) return;
+  if (!d.on && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5) return;
+  d.on = true; document.querySelector(".pt-pop")?.remove();
+  const r = d.el.parentElement.getBoundingClientRect(), pc = (v, n) => Math.round(Math.max(0, Math.min(100, v / n * 100)) * 10) / 10;
+  d.x = pc(e.clientX - r.left, r.width); d.y = pc(e.clientY - r.top, r.height);
+  d.el.style.left = d.x + "%"; d.el.style.top = d.y + "%";
+});
+document.addEventListener("pointerup", () => {
+  const d = ptDrag; ptDrag = null; if (!d?.on) return;
+  ptMoved = true; setTimeout(() => ptMoved = false, 0);
+  const i = +d.el.dataset.a.slice(3), f = S.factions[S.fac];
+  saveFaction(S.fac, { ...f, points: (f.points || []).map((p, j) => j === i ? { ...p, x: d.x, y: d.y } : p) })
+    .then(() => toast("지점 위치를 저장했습니다")).catch(e => { console.error(e); toast("저장하지 못했습니다. " + why(e)); });
+});
 
 // ---------- 캐릭터 순서: 로그인 상태에서 카드를 끌면 다른 카드가 밀려나고, 놓으면 저장된다 ----------
 let dragEl = null, dragLock = 0;
