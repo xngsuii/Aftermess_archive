@@ -504,3 +504,10 @@ body.in-editor #facsw,body.in-editor #totop{display:none}
 .quote{padding-left:56px}
 .quote::before{font-style:normal;left:2px}
 @media(max-width:640px){.quote{padding-left:44px}}
+/* v19: 편집 창의 여러 장 사진 칸 */
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px;margin-bottom:8px}
+.imgs:empty{display:none}
+.imgs-it{position:relative;aspect-ratio:1;background:var(--bg) center/cover no-repeat;border:1px solid var(--line)}
+.imgs-it div{position:absolute;left:0;right:0;bottom:0;display:flex;background:rgba(0,0,0,.7)}
+.imgs-it button{flex:1;height:22px;font-size:10px;color:#fff}
+.imgs-it button:hover{background:rgba(255,255,255,.18)}

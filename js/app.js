@@ -183,7 +183,7 @@ const charSchema = () => {
     ...PROFILE_FIELDS];
 };
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
-  { k: "imgs", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }] },
+  { k: "imgs", label: "이미지", type: "imgs" },
   { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.num || c.name || "이름 없음"]) },
   { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
@@ -395,7 +395,7 @@ let goal = 6, cur = 0;
   ldRows.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 20));
   ldCells.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 100 / ldCells.length));
   if (cur < 100) return requestAnimationFrame(tick);
-  LD.classList.add("ready");
+  LD.classList.add("ready"); $l("lz-enter").disabled = false;
   $l("lz-st").textContent = "ONLINE";
   $l("lz-warn").textContent = "□ SEAL CONFIRMED";
 })();

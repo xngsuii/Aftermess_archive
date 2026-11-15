@@ -1,5 +1,5 @@
 // 공용 도구: 글자 변환, 이미지 지연 로딩, 편집 양식, 알림
-import { getImage, saveImage, delImage, compress, collectIds } from "./store.js";
+import { getImage, saveImage, delImage, compress, collectIds, thumbId } from "./store.js";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // **굵게**, __밑줄 강조__
@@ -163,6 +163,35 @@ export function buildFields(schema, obj, ctx = {}) {
         box.append(add);
       };
       draw(); w.append(box);
+    } else if (f.type === "imgs") {
+      // 사진 여러 장: 고르면 바로 올라가고, ✕로 빼고, ◀ ▶로 순서를 바꾼다
+      if (!Array.isArray(obj[f.k])) obj[f.k] = [];
+      const box = h("div", "imgs"), add = h("label", "btn"), inp = h("input"), txt = h("span", "", "+ 사진 추가 (여러 장 선택 가능)");
+      inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true; add.style.cursor = "pointer"; add.append(txt, inp);
+      const draw = () => {
+        box.innerHTML = "";
+        obj[f.k] = obj[f.k].filter(x => x && x.img);
+        obj[f.k].forEach((x, i) => {
+          const it = h("div", "imgs-it"), bar = h("div");
+          getImage(thumbId(x.img)).then(u => u || getImage(x.img)).then(u => { if (u) it.style.backgroundImage = `url("${u}")`; });
+          const mk = (t, title, fn) => { const b = h("button", "", t); b.type = "button"; b.title = title; b.onclick = () => { fn(); draw(); ch(); }; bar.append(b); };
+          mk("◀", "앞으로", () => { if (i > 0) [obj[f.k][i - 1], obj[f.k][i]] = [obj[f.k][i], obj[f.k][i - 1]]; });
+          mk("▶", "뒤로", () => { if (i < obj[f.k].length - 1) [obj[f.k][i + 1], obj[f.k][i]] = [obj[f.k][i], obj[f.k][i + 1]]; });
+          mk("✕", "빼기", () => obj[f.k].splice(i, 1));
+          it.append(bar); box.append(it);
+        });
+      };
+      inp.onchange = async () => {
+        const files = [...inp.files]; inp.value = "";
+        try {
+          for (let i = 0; i < files.length; i++) {
+            txt.textContent = `올리는 중… ${i + 1} / ${files.length}`;
+            obj[f.k].push({ img: await saveImage(files[i], { thumb: true }) }); draw();
+          }
+        } catch (e) { console.error(e); toast("일부 사진을 올리지 못했습니다. " + why(e)); }
+        txt.textContent = "+ 사진 추가 (여러 장 선택 가능)"; ch();
+      };
+      draw(); w.append(box, add);
     } else if (f.type === "img" || f.type === "inline") {
       const box = h("div", "imgf"), pv = h("div", "imgf-pv"), inp = h("input"), rm = h("button", "btn", "지우기");
       inp.type = "file"; inp.accept = "image/*"; rm.type = "button";

@@ -183,3 +183,7 @@
   #loader>.lz-b{min-height:74px}
 }
 @media(max-height:880px){.lz-l .lz-era,.lz-l h6:nth-of-type(3){display:none}}
+/* v6: ACCESS는 처음부터 보이고, 준비되기 전에는 꺼진 상태 */
+.lz-enter{display:block}
+.lz-enter:disabled{border-color:rgba(255,255,255,.2);background:none;color:var(--d);animation:none;cursor:not-allowed}
+.lz-enter:disabled:hover{background:none}
