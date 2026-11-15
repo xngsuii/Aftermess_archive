@@ -447,3 +447,6 @@ body.admin div.adm{display:block}
 .lb-fig{position:relative;line-height:0;max-width:100%}
 #lb .lb-fig img{max-width:calc(100vw - 40px);max-height:90vh}
 .lb-cap{position:absolute;padding:34px 16px 12px;line-height:1.5;font-size:13px;background:linear-gradient(to top,rgba(0,0,0,.8),rgba(0,0,0,.4) 55%,transparent)}
+
+/* v12: 섹션 접기 */
+[data-fold].shut{display:none}

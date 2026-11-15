@@ -7,6 +7,7 @@ import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecr
 import { openEditor, closeEditor } from "./editor.js";
 
 const app = document.getElementById("app");
+S.fold = { people: false, chron: false };
 const ed = (what, label = "편집") => `<button class="ed" data-a="edit:${what}">${label}</button>`;
 const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path d="M50 14c-13 0-21 10-21 24 0 9 3 17 8 22-2 4-6 6-14 9C10 74 4 84 2 100h96c-2-16-8-26-21-31-8-3-12-5-14-9 5-5 8-13 8-22 0-14-8-24-21-24z"/></svg>`;
 S.q = ""; S.memoN = 20;
@@ -41,8 +42,8 @@ function world(s) {
 function faction(f) {
   const k = S.fac, pts = f.points || [], stats = (f.mapStats || []).filter(s => s.k || s.v);
   const chron = k === "ww" ? "" : `<div class="sec-h"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
-      <div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="togall">+</button> ${ed("fchron")}</div></div>
-    <div class="chrs">${(f.chron || []).map(c => `<article class="chr tg ${c.hot ? "hot" : ""}"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><i class="arr">↘</i><h4>${esc(c.title)}</h4></button>
+      <div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="fold:chron">${S.fold.chron ? "+" : "−"}</button> ${ed("fchron")}</div></div>
+    <div class="chrs ${S.fold.chron ? "shut" : ""}" data-fold="chron">${(f.chron || []).map(c => `<article class="chr tg ${c.hot ? "hot" : ""}"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><i class="arr">↘</i><h4>${esc(c.title)}</h4></button>
       ${c.body ? `<div class="tg-b"><div>${fmt(c.body)}</div></div>` : ""}</article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>`;
   return `<section id="faction" class="sec wrap">
     <nav class="fsel">${FAC.map(x => `<button data-faction="${x}" class="${x === k ? "on" : ""}" data-a="fac:${x}">${esc(S.factions[x].short || S.factions[x].name)}</button>`).join("")}</nav>
@@ -55,7 +56,7 @@ function faction(f) {
     <div class="map ${f.mapImg ? "has" : ""}">${f.mapImg ? `<img data-img="${esc(f.mapImg)}" alt="">` : "MAP · 이미지 준비 중"}
       ${pts.map((p, i) => `<button class="pt ${p.hot ? "hot" : ""} ${p.side === "l" ? "l" : ""}" style="left:${Number(p.x ?? 50)}%;top:${Number(p.y ?? 50)}%" data-a="pt:${i}"><i></i><b>${esc(p.label)}</b></button>`).join("")}</div>
     ${stats.length ? `<div class="mstats">${stats.map(s => `<span>${esc(s.k)}<b>${esc(s.v)}</b></span>`).join("")}</div>` : ""}
-    <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
+    <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${k === "milgram" ? "" : esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
       <div class="tg-b"><div>${fmt(u.body)}</div></div></article>`).join("")}</div>
@@ -87,9 +88,9 @@ function people() {
       + (rest.length ? head("미분류", "", rest.length) + block(rest, "") : "");
   } else body = list.length ? block(list, null) : none;
   return `<section id="people" class="sec wrap">
-    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
-    ${body}
-    <div id="file"></div></section>`;
+    <div class="sec-h"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">눌러서 열기 / 닫기 <button class="plus" data-a="fold:people">${S.fold.people ? "+" : "−"}</button> ${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
+    <div class="${S.fold.people ? "shut" : ""}" data-fold="people">${body}
+    <div id="file"></div></div></section>`;
 }
 const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.name || c.num) : null; }), ...(m.tags || [])].filter(Boolean))];
 const memoDate = m => m.at ? new Date(m.at).toLocaleDateString("sv").replaceAll("-", ".") : "";
@@ -142,7 +143,7 @@ function drawFile(scroll) {
   if (c && scroll) setTimeout(() => box.scrollIntoView({ behavior: "smooth", block: "start" }), 350);
 }
 function render() {
-  document.body.dataset.faction = S.fac;
+  document.body.dataset.faction = document.documentElement.dataset.faction = S.fac;
   app.innerHTML = hero(S.site) + world(S.site) + faction(S.factions[S.fac]) + people() + trivia();
   drawFile();
   hydrate(app);
@@ -248,6 +249,11 @@ const ACT = {
   fac(k) { S.fac = k; S.openChar = null; render(); },
   go(k) { S.fac = k; S.openChar = null; render(); document.getElementById("faction").scrollIntoView(); },
   tog(_, el) { el.closest(".tg").classList.toggle("open"); },
+  fold(k, el) {
+    S.fold[k] = !S.fold[k];
+    document.querySelector(`[data-fold="${k}"]`)?.classList.toggle("shut", S.fold[k]);
+    el.textContent = S.fold[k] ? "+" : "−";
+  },
   togall(_, el) {
     const all = [...el.closest("section").querySelectorAll(".chr")], open = all.every(x => x.classList.contains("open"));
     all.forEach(x => x.classList.toggle("open", !open));

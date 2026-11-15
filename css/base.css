@@ -19,15 +19,15 @@
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;word-break:keep-all}
 p{margin:0 0 .45em}
 p.sp,blockquote.sp{margin-top:1.3em}
-blockquote.bq{margin:1em 0;padding:2px 0 2px 16px;border-left:2px solid var(--accent);font-weight:700;color:var(--fg)}
+blockquote.bq{margin:1em 0;padding:2px 0 2px 16px;border-left:2px solid var(--accent)}
 b,strong{font-weight:700;color:var(--fg)}
 u{text-decoration:none;font-weight:700;color:var(--fg);border-bottom:1.5px solid var(--accent);padding-bottom:1px}
 img{max-width:100%;display:block}
 .tc-g{color:var(--fg3)}
 .tc-w{color:var(--fg)}
 .tc-r{color:var(--accent)}
-/* 스크롤바: 바탕은 배경색, 막대는 빨강 */
-*{scrollbar-width:thin;scrollbar-color:var(--c-ww) var(--bg)}
+/* 스크롤바: 바탕은 배경색, 막대는 진영 색 */
+*{scrollbar-width:thin;scrollbar-color:var(--accent) var(--bg)}
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--c-ww)}
+::-webkit-scrollbar-thumb{background:var(--accent)}
