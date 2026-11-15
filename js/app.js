@@ -331,9 +331,33 @@ onAuthStateChanged(auth, u => {
 });
 
 // ---------- 로딩 화면 ----------
-const LD = document.getElementById("loader"), ldN = document.getElementById("lz-n"), ldS = document.getElementById("lz-s");
-const ldRows = [...LD.querySelectorAll(".lz-seq li")], ldParts = [...LD.querySelectorAll(".lz-part")];
-const enterSite = () => LD.classList.add("done");
+const LD = document.getElementById("loader"), $l = id => document.getElementById(id), ldN = $l("lz-n"), ldS = $l("lz-s");
+const ldRows = [...LD.querySelectorAll(".lz-seq li")], ldCells = [...LD.querySelectorAll(".lz-cells span")];
+// 지도 위에서 차례로 깜빡이는 지점 [이름, 위도, 경도]
+const CITIES = [["VOLGOGRAD", 48.708, 44.513], ["NEW YORK", 40.713, -74.006], ["SHANGHAI", 31.23, 121.474], ["HELSINKI", 60.17, 24.938],
+  ["HONG KONG", 22.319, 114.169], ["MOSCOW", 55.756, 37.617], ["KYIV", 50.45, 30.523], ["SEOUL", 37.566, 126.978]];
+const cityXY = ([, la, lo]) => [((lo - 5) * 5 / 3).toFixed(1), ((10.5 - la) * 5 / 3).toFixed(1)];
+const dms = (v, pos, neg) => { const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = Math.floor(((a - d) * 60 - m) * 60);
+  return `${d}°${String(m).padStart(2, "0")}'${String(s).padStart(2, "0")}" ${v >= 0 ? pos : neg}`; };
+const cts = $l("lz-cts");
+cts.innerHTML = CITIES.map(c => { const [x, y] = cityXY(c); return `<g class="ct" transform="translate(${x} ${y})"><circle class="rg" r="4"/><rect class="sq" x="-2.5" y="-2.5" width="5" height="5"/><text x="9" y="-7">${c[0]}</text></g>`; }).join("");
+const shortCo = (v, w, pos, neg) => String(Math.floor(Math.abs(v))).padStart(w, "0") + "°" + String(Math.floor(Math.abs(v) % 1 * 60)).padStart(2, "0") + "'" + (v >= 0 ? pos : neg);
+const cl = $l("lz-cl");
+cl.innerHTML = CITIES.map((c, i) => `<text class="cl" x="${i % 2 ? 14 : -214}" y="${162 + (i >> 1) * 13}">${String(i + 1).padStart(2, "0")}  ${c[0]}<tspan x="${i % 2 ? 214 : -14}">${shortCo(c[1], 2, "N", "S")} ${shortCo(c[2], 3, "E", "W")}</tspan></text>`).join("");
+let ci = -1;
+const cityStep = () => {
+  ci = (ci + 1) % CITIES.length;
+  const c = CITIES[ci], [x, y] = cityXY(c), co = `${dms(c[1], "N", "S")}, ${dms(c[2], "E", "W")}`, no = String(ci + 1).padStart(2, "0");
+  [...cts.children].forEach((g, i) => g.classList.toggle("on", i === ci));
+  [...cl.children].forEach((t, i) => t.classList.toggle("on", i === ci));
+  $l("lz-chh").style.transform = `translateY(${y}px)`; $l("lz-chv").style.transform = `translateX(${x}px)`;
+  $l("lz-big").textContent = $l("lz-co").textContent = $l("lz-co2").textContent = co;
+  $l("lz-bigc").textContent = `SITE ${no} · ${c[0]}`; $l("lz-city").textContent = c[0];
+  $l("lz-ix").textContent = `${no} / ${String(CITIES.length).padStart(2, "0")}`;
+};
+cityStep();
+const cityT = setInterval(cityStep, 1800);
+const enterSite = () => { LD.classList.add("done"); clearInterval(cityT); };
 let goal = 6, cur = 0;
 (function tick() {
   cur += Math.max(0.4, (goal - cur) * 0.1); if (cur > goal) cur = goal;
@@ -341,13 +365,13 @@ let goal = 6, cur = 0;
   ldN.textContent = String(Math.round(cur)).padStart(3, "0");
   ldS.textContent = cur < 40 ? "AIR INTAKE" : cur < 80 ? "FILTERING PARTICLES" : cur < 100 ? "SEAL CHECK" : "CLEAR · READY";
   ldRows.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 20));
-  ldParts.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 100 / (ldParts.length + 1)));
+  ldCells.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 100 / ldCells.length));
   if (cur < 100) return requestAnimationFrame(tick);
   LD.classList.add("ready");
-  document.getElementById("lz-st").textContent = "ONLINE";
-  document.getElementById("lz-warn").textContent = "■ SEAL CONFIRMED · CLEAR";
+  $l("lz-st").textContent = "ONLINE";
+  $l("lz-warn").textContent = "□ SEAL CONFIRMED · CLEAR";
 })();
-document.getElementById("lz-enter").onclick = document.getElementById("lz-skip").onclick = enterSite;
+$l("lz-enter").onclick = $l("lz-skip").onclick = enterSite;
 document.addEventListener("keydown", e => { if (e.key === "Enter" && LD.classList.contains("ready") && !LD.classList.contains("done")) enterSite(); });
 (async () => {
   let failed = false;
