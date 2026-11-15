@@ -90,3 +90,7 @@
 .pf-srec .d b{color:var(--accent);margin-right:8px}
 .pf-sfoot{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);margin-top:26px;padding-top:16px;font-size:12px;color:var(--fg3)}
 .pf-sfoot b{font-size:14px;color:var(--fg);margin-right:6px}
+
+/* ---- v4 ---- */
+.pf-trk-b,.pf-sbody,.pf-srec>div{color:var(--fg2);font-weight:400}
+.pf-dot{font-style:normal;font-weight:800;color:var(--c-ww);margin:0 12px}

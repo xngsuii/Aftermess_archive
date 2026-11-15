@@ -3,21 +3,23 @@ import { getImage, saveImage, delImage, compress, collectIds } from "./store.js"
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // **굵게**, __밑줄 강조__
-export const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/__(.+?)__/g, "<u>$1</u>").replace(/\n/g, "<br>");
-// 줄바꿈마다 문단. 빈 줄을 두면 간격이 더 벌어지고, > 로 시작하는 줄은 인용구.
+export const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/__(.+?)__/g, "<u>$1</u>")
+  .replace(/\{([gwr]):(.+?)\}/g, '<span class="tc-$1">$2</span>').replace(/\n/g, "<br>");
+// Enter(줄바꿈)마다 문단. 줄 끝의 ↵ (Shift+Enter)는 문단을 나누지 않는 줄바꿈.
+// 빈 줄을 두면 간격이 더 벌어지고, > 로 시작하는 줄은 인용구.
 export const fmt = s => {
   let out = "", gap = false, quote = [], quoteGap = false;
   const flush = () => { if (quote.length) { out += `<blockquote class="bq${quoteGap ? " sp" : ""}">${quote.join("<br>")}</blockquote>`; quote = []; } };
-  for (const raw of String(s ?? "").replace(/\r/g, "").split("\n")) {
+  for (const raw of String(s ?? "").replace(/\r/g, "").replace(/[ \t]*↵[ \t]*\n/g, "\u0001").replace(/↵/g, "").split("\n")) {
     const l = raw.trim();
     if (!l) { flush(); gap = true; continue; }
     if (l.startsWith(">")) { if (!quote.length) quoteGap = gap && !!out; quote.push(inl(l.replace(/^>\s?/, ""))); gap = false; continue; }
     flush(); out += `<p${gap && out ? ' class="sp"' : ""}>${inl(l)}</p>`; gap = false;
   }
   flush();
-  return out;
+  return out.replaceAll("\u0001", "<br>");
 };
-export const FMT_HINT = "Enter로 문단을 나눕니다. 빈 줄을 넣으면 간격이 더 벌어집니다.";
+export const FMT_HINT = "Enter는 문단 나눔, Shift+Enter는 줄바꿈(↵ 표시)입니다. 빈 줄을 넣으면 간격이 더 벌어집니다.";
 
 // 이미지: data URL이면 바로, 아니면 화면 근처에 왔을 때 Firestore에서 불러온다
 export const imgAttr = v => !v ? "" : v.startsWith("data:") ? `src="${v}"` : `data-img="${esc(v)}"`;
@@ -53,12 +55,23 @@ export const why = e => {
   if (c.includes("image too large")) return "이미지가 너무 큽니다.";
   return "원인: " + c;
 };
-export async function lightbox(id) {
-  const lb = document.getElementById("lb");
-  lb.innerHTML = ""; lb.classList.add("on");
+// 이미지 크게 보기. 여러 장이면 화살표로 넘긴다.
+let lbIds = [], lbI = 0;
+async function lbShow() {
+  const lb = document.getElementById("lb"), id = lbIds[lbI], n = lb.querySelector(".lb-n");
+  if (n) n.textContent = `${lbI + 1} / ${lbIds.length}`;
   const url = id.startsWith("data:") ? id : await getImage(id);
-  lb.innerHTML = `<img src="${url}" alt="">`;
+  if (lbIds[lbI] === id) lb.querySelector("img").src = url;
 }
+export function lightbox(ids, i = 0) {
+  lbIds = [].concat(ids); lbI = i;
+  const lb = document.getElementById("lb"), many = lbIds.length > 1;
+  lb.innerHTML = `${many ? '<button class="lb-nav l" data-lb="-1">‹</button>' : ""}<img alt="">${many ? '<button class="lb-nav r" data-lb="1">›</button><span class="lb-n"></span>' : ""}`;
+  lb.classList.add("on");
+  lbShow();
+}
+export function lbStep(d) { if (lbIds.length) { lbI = (lbI + d + lbIds.length) % lbIds.length; lbShow(); } }
+export function lbClose() { document.getElementById("lb").classList.remove("on"); lbIds = []; }
 
 const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
@@ -66,9 +79,9 @@ const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) 
 function formatBar(input, onChange, withQuote) {
   const bar = h("div", "fbar");
   const set = (v, a, b) => { input.value = v; input.focus(); input.setSelectionRange(a, b); onChange(); };
-  const wrap = mark => {
+  const wrap = (a, b = a) => {
     const s = input.selectionStart, e = input.selectionEnd, v = input.value, sel = v.slice(s, e) || "텍스트";
-    set(v.slice(0, s) + mark + sel + mark + v.slice(e), s + mark.length, s + mark.length + sel.length);
+    set(v.slice(0, s) + a + sel + b + v.slice(e), s + a.length, s + a.length + sel.length);
   };
   const quote = () => {
     const v = input.value, s = v.lastIndexOf("\n", input.selectionStart - 1) + 1, e = input.selectionEnd;
@@ -78,6 +91,9 @@ function formatBar(input, onChange, withQuote) {
   const mk = (txt, title, fn) => { const b = h("button", "", txt); b.type = "button"; b.title = title; b.onclick = fn; bar.append(b); };
   mk("B", "굵게", () => wrap("**"));
   mk("U", "밑줄 강조", () => wrap("__"));
+  mk("회색", "글자색: 회색", () => wrap("{g:", "}"));
+  mk("흰색", "글자색: 흰색", () => wrap("{w:", "}"));
+  mk("빨강", "글자색: 빨강", () => wrap("{r:", "}"));
   if (withQuote) mk("❝ 인용", "인용구", quote);
   return bar;
 }
@@ -153,6 +169,12 @@ export function buildFields(schema, obj, ctx = {}) {
       obj[f.k].forEach(v => { if (!opts.some(o => o[0] === v)) opts.push([v, v]); });
       const draw = () => {
         box.innerHTML = "";
+        if (f.all && opts.length) {
+          const full = opts.every(o => obj[f.k].includes(o[0]));
+          const b = h("button", "pill all", full ? "전원 해제" : "전원 선택"); b.type = "button";
+          b.onclick = () => { obj[f.k] = full ? [] : opts.map(o => o[0]); draw(); ch(); };
+          box.append(b);
+        }
         opts.forEach(([v, l]) => {
           const b = h("button", "pill" + (obj[f.k].includes(v) ? " on" : ""), l); b.type = "button";
           b.onclick = () => { const a = obj[f.k], i = a.indexOf(v); if (i < 0) a.push(v); else a.splice(i, 1); draw(); ch(); };
@@ -178,6 +200,14 @@ export function buildFields(schema, obj, ctx = {}) {
       i.value = obj[f.k] ?? ""; if (f.ph) i.placeholder = f.ph;
       i.oninput = () => { obj[f.k] = i.value; ch(); };
       if (area || f.fmt) w.append(formatBar(i, () => { obj[f.k] = i.value; ch(); }, area));
+      // Shift+Enter: 문단을 나누지 않는 줄바꿈 표시(↵)를 넣는다
+      if (area) i.onkeydown = e => {
+        if (e.key !== "Enter" || !e.shiftKey) return;
+        e.preventDefault();
+        const s = i.selectionStart;
+        i.value = i.value.slice(0, s) + "↵\n" + i.value.slice(i.selectionEnd);
+        i.setSelectionRange(s + 2, s + 2); obj[f.k] = i.value; ch();
+      };
       w.append(i);
     }
     if (f.hint || f.type === "area") w.append(h("div", "hint", f.hint || FMT_HINT));

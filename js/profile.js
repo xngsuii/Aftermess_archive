@@ -57,7 +57,7 @@ function secret(c, opt) {
       ${c.secretImg ? `<img class="pf-simg" ${imgAttr(c.secretImg)} alt="">` : ""}
       <div class="pf-sbody">${fmt(c.secretBody)}</div>
       ${recs.length ? `<div class="pf-srec"><h5>RECORD</h5>${recs.map(r => `<div><p class="d"><b>${esc(r.date)}</b>${r.age ? "AGE " + esc(r.age) : ""}</p>${fmt(r.body)}</div>`).join("")}</div>` : ""}
-      ${foot ? `<div class="pf-sfoot"><span><b>${esc(c.realName)}</b>${esc(c.realNameEn)}</span><span>${esc([c.birthday, c.blood].filter(Boolean).join("  ·  "))}</span></div>` : ""}
+      ${foot ? `<div class="pf-sfoot"><span><b>${esc(c.realName)}</b>${esc(c.realNameEn)}</span><span>${[c.birthday, c.blood].filter(Boolean).map(esc).join('<i class="pf-dot">·</i>')}</span></div>` : ""}
     </div></section>`;
 }
 

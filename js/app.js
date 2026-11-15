@@ -1,8 +1,8 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { S, FAC, loadAll, useDefaults, getImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
-import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, openForm, why } from "./ui.js";
+import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
+import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 
@@ -29,7 +29,7 @@ function world(s) {
   const eras = (s.eras || []).map((e, i) => `
     <div class="era ${i % 2 ? "r" : ""}" data-pos="site|eras.${i}.imgPos"><div class="era-img pos-t" ${bgAttr(e.img, e.imgPos)}></div>
       <h4>${esc(e.name)}<small>${esc(e.en)} · ${esc(e.range)}</small></h4>
-      <ol class="tl">${(e.events || []).map(v => `<li><time>${day(v.date)}</time><div class="tl-t"><strong>${esc(v.title)}</strong>${fmt(v.desc)}</div></li>`).join("")}</ol></div>`).join("");
+      <ol class="tl">${(e.events || []).map(v => `<li class="${v.dot ? "d-" + esc(v.dot) : ""}"><time>${day(v.date)}</time><div class="tl-t"><strong>${esc(v.title)}</strong>${fmt(v.desc)}</div></li>`).join("")}</ol></div>`).join("");
   const syn = (s.syn || []).map(r => `<div class="syn-row ${/^[—–-]/.test(r.year || "") ? "gap" : ""}"><div class="syn-y"><b>${esc(r.year)}</b><small>${esc(r.label)}</small></div><div class="syn-t">${fmt(r.body)}</div></div>`).join("");
   return `<section id="world" class="sec wrap">
     <div class="sec-h"><div><h2>Synopsis</h2></div><div class="r">시놉시스 ${ed("syn")}</div></div>
@@ -119,8 +119,9 @@ function fileHtml(c) {
   let body;
   if (cur === "assets") {
     const a = (c.assets || []).filter(x => x.img);
-    body = `<div class="file-pad">${a.length ? `<div class="agrid">${a.map(x => `<figure data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div>${x.cap ? `<figcaption>${esc(x.cap)}</figcaption>` : ""}</figure>`).join("")}</div>` : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-      <p style="margin-top:14px">${ed("assets:" + c.id, "에셋 편집")}</p></div>`;
+    body = `<div class="file-pad"><div class="agrid">${a.map(x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`).join("")}</div>
+      ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
+      <p class="adm" style="margin-top:14px"><label class="btn" style="cursor:pointer">+ 사진 추가 (여러 장 선택 가능)<input type="file" id="asset-add" data-char="${c.id}" accept="image/*" multiple hidden></label> <span style="font-size:11px;color:var(--fg3);margin-left:8px">드래그로 순서 변경 · ✕로 삭제</span></p></div>`;
   } else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
@@ -164,7 +165,7 @@ const charSchema = () => {
 };
 const memoSchema = () => [T("title", "제목"), A("body", "내용"),
   { k: "imgs", label: "이미지", type: "list", item: "이미지", fields: [{ k: "img", label: "이미지", type: "img", thumb: true }] },
-  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", options: S.chars.map(c => [c.id, c.name || c.num || "이름 없음"]) },
+  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.name || c.num || "이름 없음"]) },
   { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
   openForm({ title: isNew ? "메모 추가" : "메모 편집", schema: memoSchema(), data: m,
@@ -175,7 +176,7 @@ const EDIT = {
   hero: () => openForm({ title: "메인 화면", schema: [{ k: "kicker", label: "좌측 상단 작은 문구", type: "area", hint: "줄바꿈 가능" }, { k: "heroImg", label: "대표 사진", type: "img", hint: "저장한 뒤 사진을 더블클릭하면 위치를 조정할 수 있습니다." }, { k: "logo", label: "로고 이미지", type: "img", hint: "저장한 뒤 로고를 더블클릭하면 드래그로 위치, 휠로 크기를 조정할 수 있습니다." }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   syn: () => openForm({ title: "시놉시스", schema: [{ k: "syn", label: "연도별 칸", type: "list", item: "칸", fields: [T("year", "연도", "2030"), T("label", "연도 아래 작은 글", "핵전쟁 발발"), A("body", "옆에 들어갈 글")] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   timeline: () => openForm({ title: "타임라인", schema: [{ k: "eras", label: "시대", type: "list", item: "시대", fields: [T("name", "이름", "붕괴기"), T("en", "영문", "COLLAPSE"), T("range", "기간", "2030 — 2038"), { k: "img", label: "이미지", type: "img" },
-    { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), A("desc", "설명 (선택)")] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
+    { k: "events", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2030 03.02"), T("title", "제목"), A("desc", "설명 (선택)"), { k: "dot", label: "점 색", type: "select", options: [["", "자동 (처음과 끝만 진영 색)"], ["white", "흰색"], ["accent", "진영 색"], ["hollow", "빈 네모"]] }] }] }], data: S.site, onSave: async v => { await saveSite(v); render(); } }),
   forg: k => openForm({ title: `${S.factions[k].name} · World 요약`, schema: [T("short", "짧은 이름", "W.W"), { k: "tagline", label: "좌측 상단 문구", type: "area", hint: "예: Dead Zone / Insurgent Cell" }, { k: "est", label: "설립 정보", type: "area", hint: "예: EST. 2071. 12. 25 / Volgograd, Russia" }, { k: "banner", label: "배너 이미지", type: "img" }, A("summary", "요약 설명")], data: S.factions[k], onSave: async v => { await saveFaction(k, v); render(); } }),
   fgroups: () => facForm("캐릭터 그룹", [{ k: "groups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "본대"), T("en", "영문", "MAIN ELEMENT")] }]),
   fhead: () => facForm("진영 머리말", [T("name", "진영 이름"), T("sub", "부제", "// classified, HQ COMMANDER"), A("quote", "인용문 (영문)"), A("quoteKo", "인용문 (번역)"), T("quoteSrc", "출처", "INTERCEPT 2078 / UNVERIFIED")]),
@@ -254,13 +255,23 @@ const ACT = {
   },
   more() { S.memoN += 20; drawMemos(); },
   secret(_, el) { toggleSecret(el); },
-  full(id) { lightbox(id); },
+  full(id, el) {
+    const ids = [...(el.closest(".agrid")?.querySelectorAll("[data-a^='full:']") || [el])].map(x => x.dataset.a.slice(5));
+    lightbox(ids, Math.max(0, ids.indexOf(id)));
+  },
+  async delasset(arg) {
+    const [cid, img] = arg.split(":"), c = S.chars.find(x => x.id === cid);
+    if (!c || !confirm("이 사진을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    try { await saveChar({ ...c, assets: (c.assets || []).filter(x => x.img !== img) }); delImage(img); toast("삭제했습니다"); }
+    catch (e) { console.error(e); toast("삭제하지 못했습니다. " + why(e)); }
+    drawFile();
+  },
   trk(_, el) { toggleTrack(el); },
   trkopen(_, el) { toggleTrackText(el); },
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
 document.addEventListener("click", e => {
-  if (e.target.closest("#lb")) return document.getElementById("lb").classList.remove("on");
+  if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }
   const el = e.target.closest("[data-a]"); if (!el) return;
   const a = el.dataset.a, i = a.indexOf(":"), name = i < 0 ? a : a.slice(0, i);
   if (name === "edit") e.stopPropagation();
@@ -297,7 +308,7 @@ let goal = 6, cur = 0;
 // ---------- 메인 화면 넘김: 메인에서 아래로 굴리면 한 번에 다음 화면으로 넘어간다 ----------
 let sliding = false;
 const heroH = () => document.getElementById("top")?.offsetHeight || innerHeight;
-const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || document.body.classList.contains("adjusting") || !document.getElementById("loader").classList.contains("done");
+const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || document.body.classList.contains("adjusting") || document.getElementById("lb").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
 function slideTo(to) {
   sliding = true;
   const from = scrollY, t0 = performance.now(), dur = 550;
@@ -402,9 +413,9 @@ addEventListener("wheel", e => {
 
 // ---------- 캐릭터 순서: 로그인 상태에서 카드를 끌면 다른 카드가 밀려나고, 놓으면 저장된다 ----------
 let dragEl = null, dragLock = 0;
-const CARD = ".pcard,.lcard";
+const CARD = ".pcard,.lcard,.asset";
 function flip(change) {
-  const els = [...document.querySelectorAll("#people .pcard, #people .lcard")];
+  const els = [...document.querySelectorAll("#people .pcard, #people .lcard, #people .asset")];
   const before = new Map(els.map(el => [el, el.getBoundingClientRect()]));
   change();
   els.forEach(el => {
@@ -424,7 +435,8 @@ document.addEventListener("dragstart", e => {
 document.addEventListener("dragover", e => {
   if (!dragEl) return;
   const over = e.target.closest(CARD), box = e.target.closest("#people .pgrid, #people .lgrid");
-  if (!over && !box) return;
+  const asset = dragEl.matches(".asset");
+  if (asset ? !over?.matches(".asset") : (over?.matches(".asset") || (!over && !box))) return;
   e.preventDefault();
   if (performance.now() < dragLock) return;
   if (over && over !== dragEl) {
@@ -437,7 +449,18 @@ document.addEventListener("dragover", e => {
 document.addEventListener("drop", e => { if (dragEl) e.preventDefault(); });
 document.addEventListener("dragend", async () => {
   if (!dragEl) return;
+  const asset = dragEl.matches(".asset");
   dragEl.classList.remove("dragging"); dragEl = null;
+  if (asset) {
+    // 에셋: 화면에 놓인 순서대로 저장
+    const c = S.chars.find(x => x.id === S.openChar); if (!c) return;
+    const order = [...document.querySelectorAll("#file .asset")].map(el => el.dataset.asset);
+    const next = order.map(id => (c.assets || []).find(x => x.img === id)).filter(Boolean);
+    if (next.map(x => x.img).join() === (c.assets || []).filter(x => x.img).map(x => x.img).join()) return;
+    try { await saveChar({ ...c, assets: next }); toast("순서를 저장했습니다"); }
+    catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); drawFile(); }
+    return;
+  }
   // 화면에 놓인 순서와 그룹을 그대로 저장한다
   const changed = [];
   document.querySelectorAll("#people .pcard, #people .lcard").forEach((el, n) => {
@@ -454,4 +477,28 @@ document.addEventListener("dragend", async () => {
 document.addEventListener("input", e => {
   if (e.target.id !== "memo-q") return;
   S.q = e.target.value; S.memoN = 20; drawMemos();
+});
+
+// ---------- 에셋: 사진을 고르면 바로 올린다 (여러 장 가능) ----------
+document.addEventListener("change", async e => {
+  const inp = e.target;
+  if (inp.id !== "asset-add") return;
+  const files = [...inp.files], c = S.chars.find(x => x.id === inp.dataset.char);
+  if (!files.length || !c) return;
+  const added = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      toast(`사진 올리는 중… ${i + 1} / ${files.length}`);
+      added.push({ img: await saveImage(files[i], { thumb: true }) });
+    }
+  } catch (err) { console.error(err); toast("일부 사진을 올리지 못했습니다. " + why(err)); }
+  if (added.length) {
+    try { await saveChar({ ...c, assets: [...(c.assets || []), ...added] }); if (added.length === files.length) toast(`사진 ${added.length}장을 추가했습니다`); }
+    catch (err) { console.error(err); added.forEach(x => delImage(x.img)); toast("저장하지 못했습니다. " + why(err)); }
+  }
+  drawFile();
+});
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("lb").classList.contains("on")) return;
+  if (e.key === "ArrowRight") lbStep(1); else if (e.key === "ArrowLeft") lbStep(-1); else if (e.key === "Escape") lbClose();
 });
