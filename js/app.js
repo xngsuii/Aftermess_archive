@@ -331,15 +331,24 @@ onAuthStateChanged(auth, u => {
 });
 
 // ---------- 로딩 화면 ----------
-const ldN = document.getElementById("ld-n"), ldF = document.getElementById("ld-fill"), ldS = document.getElementById("ld-s");
+const LD = document.getElementById("loader"), ldN = document.getElementById("lz-n"), ldS = document.getElementById("lz-s");
+const ldRows = [...LD.querySelectorAll(".lz-seq li")], ldParts = [...LD.querySelectorAll(".lz-part")];
+const enterSite = () => LD.classList.add("done");
 let goal = 6, cur = 0;
 (function tick() {
   cur += Math.max(0.4, (goal - cur) * 0.1); if (cur > goal) cur = goal;
-  ldN.textContent = Math.round(cur); ldF.setAttribute("width", (132 * cur / 100).toFixed(1));
-  ldS.textContent = cur < 40 ? "AIR INTAKE" : cur < 80 ? "FILTERING PARTICLES" : cur < 100 ? "SEAL CHECK" : "CLEAR";
-  if (cur < 100) requestAnimationFrame(tick);
-  else setTimeout(() => document.getElementById("loader").classList.add("done"), 350);
+  LD.style.setProperty("--p", (cur / 100).toFixed(3));
+  ldN.textContent = String(Math.round(cur)).padStart(3, "0");
+  ldS.textContent = cur < 40 ? "AIR INTAKE" : cur < 80 ? "FILTERING PARTICLES" : cur < 100 ? "SEAL CHECK" : "CLEAR · READY";
+  ldRows.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 20));
+  ldParts.forEach((el, i) => el.classList.toggle("on", cur >= (i + 1) * 100 / (ldParts.length + 1)));
+  if (cur < 100) return requestAnimationFrame(tick);
+  LD.classList.add("ready");
+  document.getElementById("lz-st").textContent = "ONLINE";
+  document.getElementById("lz-warn").textContent = "■ SEAL CONFIRMED · CLEAR";
 })();
+document.getElementById("lz-enter").onclick = document.getElementById("lz-skip").onclick = enterSite;
+document.addEventListener("keydown", e => { if (e.key === "Enter" && LD.classList.contains("ready") && !LD.classList.contains("done")) enterSite(); });
 (async () => {
   let failed = false;
   try { await loadAll(() => goal = Math.min(85, goal + 20)); }

@@ -9,27 +9,95 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/profile.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/loader.css">
 </head>
 <body data-faction="ww">
   <div id="loader">
-    <div class="ld-in">
-      <p class="ld-k">CBRN FILTER · INTAKE CHECK</p>
-      <svg class="ld-svg" viewBox="0 0 200 110" aria-hidden="true">
-        <defs><clipPath id="ld-clip"><rect x="34" y="18" width="132" height="74" rx="8"/></clipPath></defs>
-        <g clip-path="url(#ld-clip)">
-          <rect id="ld-fill" class="fill" x="34" y="18" width="0" height="74"/>
-          <g class="rib"><path d="M48 18v74M62 18v74M76 18v74M90 18v74M104 18v74M118 18v74M132 18v74M146 18v74"/></g>
-          <g class="ribo"><path d="M48 18v74M62 18v74M76 18v74M90 18v74M104 18v74M118 18v74M132 18v74M146 18v74"/></g>
+    <header class="lz-top">
+      <p><b>AFTERMESS ARCHIVE</b><br>LOCATION: DEAD ZONE · SECTOR 07<br>CBRN FILTER · INTAKE CHECK</p>
+      <p class="lz-tabs"><span>SAT</span><b>POS</b><span>LAT</span></p>
+      <p class="lz-tr">ARCHIVE SERVER: STATUS <b id="lz-st">LINKING</b><br>N 48°42'29" · E 44°30'48"<br>YEAR 2080</p>
+    </header>
+    <aside class="lz-l">
+      <h6>LOAD SEQUENCE<small>TWIN CANISTER</small></h6>
+      <ol class="lz-seq"><li><i>01</i>SITE DATA<b></b></li><li><i>02</i>FACTIONS<b></b></li><li><i>03</i>PERSONNEL<b></b></li><li><i>04</i>MEMOS<b></b></li><li><i>05</i>SEAL CHECK<b></b></li></ol>
+      <p class="lz-arr">››› <i>＋</i> ›› <i>＋</i> ›</p>
+      <p>TYPE: HALF-FACE RESPIRATOR<br>STD: CBRN-80 / P3<br>EXPLODED VIEW · 05 PARTS</p>
+    </aside>
+    <div class="lz-c">
+      <svg class="lz-svg" viewBox="-320 -320 640 640" aria-hidden="true">
+        <g class="rad">
+          <circle r="290"/><circle r="215"/><circle r="140"/><circle r="65"/><circle class="tk" r="301"/>
+          <path d="M-312 0H312M0 -312V312"/><path class="dg" d="M-205 -205L205 205M-205 205L205 -205"/>
+          <text x="0" y="-266">360</text><text x="262" y="-6">090</text><text x="0" y="278">180</text><text x="-262" y="-6">270</text>
+          <path class="mk" d="M-236 -236l8 -14l8 14zM228 222l8 -14l8 14z"/><path d="M226 -232h16M234 -240v16M-244 228h16M-236 220v16"/>
         </g>
-        <rect class="can" x="34" y="18" width="132" height="74" rx="8"/>
-        <rect class="can" x="166" y="40" width="16" height="30"/>
-        <rect class="can" x="18" y="44" width="16" height="22"/>
-        <circle class="air" cx="8" cy="50" r="1.4"/><circle class="air" cx="6" cy="58" r="1.4"/>
-        <circle class="air" cx="192" cy="52" r="1.4"/><circle class="air" cx="194" cy="60" r="1.4"/>
+        <g class="lz-sweep"><path d="M0 0L290 0A290 290 0 0 0 251.1 -145Z"/><path class="ln" d="M0 0L290 0"/></g>
+
+        <g class="lz-part">
+          <path class="dash" d="M62 -60L102 -114M104 -8L130 -60"/>
+          <path class="band" d="M100 -115C140 -175 205 -205 245 -170"/><path class="band-in" d="M100 -115C140 -175 205 -205 245 -170"/>
+          <path class="band" d="M128 -60C175 -85 225 -100 262 -85"/><path class="band-in" d="M128 -60C175 -85 225 -100 262 -85"/>
+          <path class="band w" d="M243 -172C274 -152 280 -110 262 -83"/><path class="band-in w" d="M243 -172C274 -152 280 -110 262 -83"/>
+          <rect class="s" x="93" y="-123" width="13" height="13" transform="rotate(-52 99 -116)"/><rect class="s" x="121" y="-67" width="13" height="13" transform="rotate(-25 127 -60)"/>
+          <path class="ldr" d="M214 -193L206 -214"/><g class="chip" transform="translate(150 -228)"><rect width="22" height="13"/><text x="11" y="10">01</text><text class="nm" x="29" y="10">HEAD HARNESS</text></g>
+        </g>
+
+        <g class="lz-part">
+          <path class="s" d="M-18 -100C-4 -108 14 -104 26 -90L72 -50C96 -26 108 6 100 36C92 64 62 86 25 90C-10 94 -50 82 -68 54C-84 28 -80 -4 -62 -34L-30 -88C-27 -94 -23 -98 -18 -100Z"/>
+          <path class="t" d="M-4 -104L-30 -28L-20 30L25 90M-30 -28L38 -42L26 -90M38 -42L72 -50M38 -42L55 20L-20 30M55 20L100 36M-30 -28L-62 -34M-20 30L-68 54"/>
+          <ellipse class="s" cx="-70" cy="18" rx="9" ry="22" transform="rotate(-8 -70 18)"/>
+          <ellipse class="s" cx="62" cy="38" rx="24" ry="25.5"/><ellipse class="t" cx="62" cy="38" rx="16" ry="17"/>
+          <ellipse class="s" cx="-12" cy="48" rx="20" ry="21"/><ellipse class="t" cx="-12" cy="48" rx="13" ry="13.6"/>
+          <path class="ldr" d="M-50 -82L-96 -136"/><g class="chip" transform="translate(-196 -150)"><rect width="22" height="13"/><text x="11" y="10">02</text><text class="nm" x="29" y="10">FACEPIECE</text></g>
+        </g>
+
+        <g class="lz-part">
+          <path class="dash" d="M-26 63L-70 127"/>
+          <g transform="translate(-85 150)">
+            <ellipse class="s" cx="11" cy="-10" rx="24" ry="25"/><path class="s" d="M-17 -17L-6 -27L28 7L17 17Z" style="stroke:none"/><path class="t" d="M-17.5 -17L-6.5 -27M17.5 17L28.5 7" style="opacity:1"/>
+            <ellipse class="s" rx="24" ry="25"/><ellipse class="t" rx="17" ry="17.8"/><ellipse class="t" rx="7" ry="7.4"/><path class="t" d="M6.5 2.7L15.8 6.7M2.7 6.7L6.6 16.4M-2.6 6.8L-6.4 16.5M-6.4 2.9L-15.6 6.9M-6.5 -2.7L-15.8 -6.7M-2.7 -6.7L-6.6 -16.4M2.6 -6.8L6.4 -16.5M6.4 -2.9L15.6 -6.9"/>
+          </g>
+          <path class="ldr" d="M-98 172L-120 204"/><g class="chip" transform="translate(-216 204)"><rect width="22" height="13"/><text x="11" y="10">03</text><text class="nm" x="29" y="10">EXHALE VALVE</text></g>
+        </g>
+
+        <g class="lz-part">
+          <path class="dash" d="M-146 9L-82 17"/>
+          <g transform="translate(-212 18) rotate(-8)">
+            <path class="s hot" d="M-34 -46L34 -46A15 46 0 0 1 34 46L-34 46Z"/>
+            <path class="t" d="M-17 -46A15 46 0 0 1 -17 46M0 -46A15 46 0 0 1 0 46M17 -46A15 46 0 0 1 17 46"/>
+            <path class="s" d="M48 -15H62A5 15 0 0 1 62 15H48"/>
+            <ellipse class="s hot hotf" cx="-34" rx="15" ry="46"/><ellipse class="t" cx="-34" rx="10" ry="33"/><ellipse class="t" cx="-34" rx="4.5" ry="15"/>
+          </g>
+          <text class="fl" x="-296" y="26">›››</text>
+          <path class="ldr" d="M-222 -30L-240 -62"/><g class="chip" transform="translate(-300 -78)"><rect width="22" height="13"/><text x="11" y="10">04</text><text class="nm" x="29" y="10">FILTER · L</text></g>
+        </g>
+
+        <g class="lz-part">
+          <path class="dash" d="M84 50L150 82"/>
+          <g transform="translate(185 100)">
+            <ellipse class="s hot" cx="-16" cy="-9" rx="46" ry="50"/><path class="s" d="M22.5 -43.5L6.5 -52.5L-38.5 34.5L-22.5 43.5Z" style="stroke:none"/><path class="t hot" d="M22.5 -43.5L6.5 -52.5M-22.5 43.5L-38.5 34.5" style="opacity:1"/>
+            <ellipse class="s hot hotf" rx="46" ry="50"/><ellipse class="t" rx="39" ry="42.4"/><ellipse class="t" rx="26" ry="28.3"/><ellipse class="t" rx="13" ry="14.1"/><ellipse class="t" rx="4.5" ry="4.9"/>
+            <path class="t" d="M13.0 0.0L39.0 0.0M11.3 7.1L33.8 21.2M6.5 12.2L19.5 36.7M0.0 14.1L0.0 42.4M-6.5 12.2L-19.5 36.7M-11.3 7.1L-33.8 21.2M-13.0 0.0L-39.0 0.0M-11.3 -7.1L-33.8 -21.2M-6.5 -12.2L-19.5 -36.7M-0.0 -14.1L-0.0 -42.4M6.5 -12.2L19.5 -36.7M11.3 -7.1L33.8 -21.2"/>
+          </g>
+          <path class="ldr" d="M204 148L212 178"/><g class="chip" transform="translate(150 180)"><rect width="22" height="13"/><text x="11" y="10">05</text><text class="nm" x="29" y="10">FILTER · R</text></g>
+        </g>
       </svg>
-      <p class="ld-p"><b id="ld-n">0</b><span>%</span></p>
-      <p class="ld-s" id="ld-s">AIR INTAKE</p>
     </div>
+    <aside class="lz-r">
+      <h6>INTAKE FLOW<small>L / MIN</small></h6>
+      <svg class="lz-bars" viewBox="0 0 200 66" preserveAspectRatio="none"><rect x="4" y="46" width="8" height="18"/><rect x="18" y="34" width="8" height="30"/><rect x="32" y="42" width="8" height="22"/><rect x="46" y="20" width="8" height="44"/><rect x="60" y="28" width="8" height="36"/><rect x="74" y="12" width="8" height="52"/><rect x="88" y="36" width="8" height="28"/><rect x="102" y="24" width="8" height="40"/><rect x="116" y="6" width="8" height="58"/><rect x="130" y="30" width="8" height="34"/><rect x="144" y="18" width="8" height="46"/><rect x="158" y="40" width="8" height="24"/><rect x="172" y="26" width="8" height="38"/><rect x="186" y="14" width="8" height="50"/><path d="M0 65.5H200"/></svg>
+      <h6>PARTICLE DENSITY<small>PPM</small></h6>
+      <svg class="lz-line" viewBox="0 0 200 46" preserveAspectRatio="none"><path class="g" d="M0 11.5H200M0 23H200M0 34.5H200M50 0V46M100 0V46M150 0V46"/><polyline pathLength="1" points="0,40 14,34 28,37 42,22 56,28 70,14 84,24 98,18 112,30 126,10 140,20 154,8 168,16 182,6 196,12"/></svg>
+      <p class="lz-nums"><span>AA 221.675</span><span>BA 145.795</span><span>AB 193.732</span><span>BB 493.532</span><span>AC 173.632</span><span>BC 568.231</span><span>AD 237.786</span><span>BD 123.786</span><span>AE 175.695</span><span>BE 262.124</span><span>AF 008.207</span><span>BF 080.000</span></p>
+      <p class="lz-warn" id="lz-warn">▲ WARNING · UNFILTERED AIR</p>
+    </aside>
+    <footer class="lz-b">
+      <p class="lz-pct"><b id="lz-n">000</b><span>%</span></p>
+      <div class="lz-mid"><p id="lz-s">AIR INTAKE</p><div class="lz-bar"><i></i></div><p class="lz-sc"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></p></div>
+      <button class="lz-skip" id="lz-skip" type="button">SKIP ››</button>
+      <button class="lz-enter" id="lz-enter" type="button">ENTER</button>
+    </footer>
   </div>
 
   <div id="site">
