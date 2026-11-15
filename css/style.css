@@ -487,3 +487,7 @@ body.scrolled #totop{opacity:1;pointer-events:auto}
 .hm-sub{margin:0}
 .hmenu.open .hm-sub{margin:-4px 0 clamp(12px,2.2vh,24px)}
 @media(max-width:640px){.hmenu{top:22%}}
+/* v16: 메뉴 강조색은 진영 색, 굵기 900. 메모 태그는 펼친 글 아래에 전부 표시 */
+.hmenu>button{font-weight:900}
+.hmenu>button:hover,.hmenu>button.on{border-bottom-color:var(--accent)}
+.memo .tg-b .tags{max-width:none;overflow:visible;white-space:normal;flex-wrap:wrap;gap:6px 12px;margin-top:16px}

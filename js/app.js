@@ -104,9 +104,10 @@ function people() {
 const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.name || c.num) : null; }), ...(m.tags || [])].filter(Boolean))];
 const memoDate = m => m.at ? new Date(m.at).toLocaleDateString("sv").replaceAll("-", ".") : "";
 const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data-a="tog"><h4>${esc(m.title || String(m.body || "").slice(0, 40) || "제목 없음")}</h4>
-    <span class="tags">${memoTags(m).map(t => `<span>#${esc(t)}</span>`).join("")}</span><time>${memoDate(m)}</time><span class="plus">+</span></button>
+    <time>${memoDate(m)}</time><span class="plus">+</span></button>
   <div class="tg-b">${fmt(m.body)}
     ${(m.imgs || []).some(x => x.img) ? `<div class="agrid">${m.imgs.filter(x => x.img).map(x => `<figure data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div></figure>`).join("")}</div>` : ""}
+    <div class="tags">${memoTags(m).map(t => `<span>#${esc(t)}</span>`).join("")}</div>
     <p>${ed("memo:" + m.id)}</p></div></article>`;
 function memoList() {
   const q = (S.q || "").trim().toLowerCase();
