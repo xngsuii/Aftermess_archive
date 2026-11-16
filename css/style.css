@@ -522,3 +522,11 @@ body.in-editor #facsw,body.in-editor #totop{display:none}
 .ed-pv .pf-main img{cursor:zoom-in}
 .ed-pv.moving .pf-main img{cursor:move;outline:2px dashed var(--accent);outline-offset:-2px}
 .ed-pv.moving .pf-main::after{display:none}
+/* v21: Trivia 쪽 번호, 큰 글 입력 칸 */
+.pager{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:28px}
+.pager button{min-width:32px;height:32px;padding:0 6px;font-size:12px;font-weight:700;color:var(--fg3);border-bottom:2px solid transparent}
+.pager button:hover:not(:disabled){color:var(--fg)}
+.pager button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.pager button:disabled{opacity:.3;cursor:default}
+.pager i{font-style:normal;color:var(--fg3);padding:0 2px}
+textarea.tall{min-height:340px}

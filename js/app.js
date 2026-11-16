@@ -11,7 +11,8 @@ S.fold = { people: false, chron: false };
 S.view = null; // null: 메인 화면만. "world" | "faction" | "trivia": 메인 아래에 그 화면 하나만 붙는다
 const ed = (what, label = "편집") => `<button class="ed" data-a="edit:${what}">${label}</button>`;
 const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path d="M50 14c-13 0-21 10-21 24 0 9 3 17 8 22-2 4-6 6-14 9C10 74 4 84 2 100h96c-2-16-8-26-21-31-8-3-12-5-14-9 5-5 8-13 8-22 0-14-8-24-21-24z"/></svg>`;
-S.q = ""; S.memoN = 20;
+S.q = ""; S.memoP = 0; // Trivia 검색어와 현재 쪽(0부터)
+const MEMO_PER = 15;
 const facChars = () => S.chars.filter(c => c.faction === S.fac);
 
 // ---------- 화면 ----------
@@ -112,8 +113,11 @@ const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data
 function memoList() {
   const q = (S.q || "").trim().toLowerCase();
   const list = S.memos.filter(m => (!S.tag || memoTags(m).includes(S.tag)) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
-  return (list.slice(0, S.memoN).map(memoHtml).join("") || `<p class="empty">메모가 없습니다.</p>`)
-    + (list.length > S.memoN ? `<button class="btn more" data-a="more">더 보기 (${list.length - S.memoN})</button>` : "");
+  // 한 쪽에 15개씩. 쪽이 많으면 처음·끝과 현재 쪽 주변만 번호를 보여 준다.
+  const pages = Math.max(1, Math.ceil(list.length / MEMO_PER)), p = S.memoP = Math.min(Math.max(0, S.memoP), pages - 1);
+  const nums = [...Array(pages).keys()].filter(i => pages <= 9 || i === 0 || i === pages - 1 || Math.abs(i - p) <= 2);
+  const pager = pages < 2 ? "" : `<nav class="pager"><button data-a="page:${p - 1}" ${p ? "" : "disabled"}>‹</button>${nums.map((i, n) => (n && i - nums[n - 1] > 1 ? "<i>…</i>" : "") + `<button class="${i === p ? "on" : ""}" data-a="page:${i}">${i + 1}</button>`).join("")}<button data-a="page:${p + 1}" ${p < pages - 1 ? "" : "disabled"}>›</button></nav>`;
+  return (list.slice(p * MEMO_PER, (p + 1) * MEMO_PER).map(memoHtml).join("") || `<p class="empty">메모가 없습니다.</p>`) + pager;
 }
 function drawMemos() { const box = document.getElementById("memos"); box.innerHTML = memoList(); hydrate(box); }
 function trivia() {
@@ -182,8 +186,9 @@ const charSchema = () => {
     ...(led ? [{ k: "brief", label: "한 줄 설명 (카드에 표시)", type: "area" }] : []),
     ...PROFILE_FIELDS];
 };
-const memoSchema = () => [T("title", "제목"), A("body", "내용"),
+const memoSchema = () => [T("title", "제목"), { k: "body", label: "내용", type: "area", rows: 18 },
   { k: "imgs", label: "이미지", type: "imgs" },
+  { type: "head", label: "태그 (눌러서 펼치기)" },
   { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.num || c.name || "이름 없음"]) },
   { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
@@ -284,11 +289,11 @@ const ACT = {
   },
   tab(k) { S.tab = k; drawFile(); },
   tag(t, el) {
-    S.tag = t; S.memoN = 20;
+    S.tag = t; S.memoP = 0;
     el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
     drawMemos();
   },
-  more() { S.memoN += 20; drawMemos(); },
+  page(n) { S.memoP = +n; drawMemos(); document.getElementById("trivia")?.scrollIntoView({ behavior: "instant", block: "start" }); },
   secret(_, el) { toggleSecret(el); },
   full(id, el) {
     const asset = el.matches(".asset"), cid = S.openChar;
@@ -609,7 +614,7 @@ document.addEventListener("dragend", async () => {
 
 document.addEventListener("input", e => {
   if (e.target.id !== "memo-q") return;
-  S.q = e.target.value; S.memoN = 20; drawMemos();
+  S.q = e.target.value; S.memoP = 0; drawMemos();
 });
 
 // ---------- 에셋: 사진을 고르면 바로 올린다 (여러 장 가능) ----------

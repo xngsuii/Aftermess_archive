@@ -266,6 +266,7 @@ export function buildFields(schema, obj, ctx = {}) {
     } else {
       const area = f.type === "area", i = h(area ? "textarea" : "input");
       i.value = obj[f.k] ?? ""; if (f.ph) i.placeholder = f.ph;
+      if (area && f.rows) { i.rows = f.rows; i.classList.add("tall"); }
       i.oninput = () => { obj[f.k] = i.value; ch(); };
       if (area || f.fmt) w.append(formatBar(i, () => { obj[f.k] = i.value; ch(); }, area));
       // Shift+Enter: 문단을 나누지 않는 줄바꿈 표시(↵)를 넣는다
