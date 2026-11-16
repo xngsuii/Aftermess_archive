@@ -14,7 +14,7 @@ export const PROFILE_FIELDS = [
   { type: "ranges", label: "상단 이미지 · 하단 페이드", items: [
     { k: "mainFadeH", label: "범위", min: 0, max: 100, step: 1, def: 62, mul: 1 },
     { k: "mainFade", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
-  { type: "reset", label: "상단 이미지 위치·확대 되돌리기", keys: ["mainImgPos", "mainImgZoom"] },
+  { type: "reset", label: "위치·확대 초기화", keys: ["mainImgPos", "mainImgZoom"] },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
@@ -27,7 +27,7 @@ export const PROFILE_FIELDS = [
   { type: "ranges", label: "전신 이미지 · 하단 페이드", items: [
     { k: "sideFadeBH", label: "범위", min: 0, max: 60, step: 1, def: 14, mul: 1 },
     { k: "sideFadeB", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
-  { type: "reset", label: "전신 이미지 위치·크기 되돌리기", keys: ["sideImgX", "sideImgY", "sideImgW"] },
+  { type: "reset", label: "위치·확대 초기화", keys: ["sideImgX", "sideImgY", "sideImgW"] },
   { k: "height", label: "키", ph: "189cm" },
   { k: "nation", label: "국적", ph: "홍콩인" },
   { k: "age", label: "나이", ph: "32" },

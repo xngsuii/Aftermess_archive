@@ -54,7 +54,7 @@ function world(s) {
 function faction(f) {
   const k = S.fac, pts = f.points || [], stats = (f.mapStats || []).filter(s => s.k || s.v);
   const note = String(f.mapNote || "").split("\n").map(l => esc(l.replace(/↵\s*$/, "").trim())).filter(Boolean).slice(0, 2).join("<br>");
-  const chron = k === "ww" ? "" : `<div class="sec-h fold-h" data-a="fold:chron"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
+  const chron = k === "ww" ? "" : `<div class="sec-h fold-h" id="s-chron" data-a="fold:chron"><div><h2>${esc(f.chronTitle)}</h2><small>${esc(f.chronSub)}</small></div>
       <div class="r">눌러서 열기 / 닫기 <button class="plus">${S.fold.chron ? "+" : "−"}</button> ${ed("fchron")}</div></div>
     <div class="chrs ${S.fold.chron ? "shut" : ""}" data-fold="chron">${(f.chron || []).map(c => `<article class="chr tg ${c.hot ? "hot" : ""}"><button class="tg-h" data-a="tog"><time>${esc(c.date)}</time><span class="tag">${esc(c.tag)}</span><i class="arr">↘</i><h4>${esc(c.title)}</h4></button>
       ${c.body ? `<div class="tg-b"><div>${fmt(c.body)}</div></div>` : ""}</article>`).join("") || `<p class="empty">연표 항목이 없습니다.</p>`}</div>`;
@@ -63,15 +63,15 @@ function faction(f) {
     <p class="kicker">AFTERMESS<br>2080 NEW ERA</p>
     <h2 class="fname">${esc(f.name)}</h2><p class="fsub">${esc(f.sub)} ${ed("fhead")}</p>
     ${f.quote || f.quoteKo ? `<blockquote class="quote"><div class="en">${fmt(f.quote)}</div><div class="ko">${fmt(f.quoteKo)}</div><cite>${esc(f.quoteSrc)}</cite></blockquote>` : ""}
-    <div class="sec-h"><div><h2>Overview</h2></div><div class="r">조직 개요 ${ed("fov")}</div></div>
+    <div class="sec-h" id="s-ov"><div><h2>Overview</h2></div><div class="r">조직 개요 ${ed("fov")}</div></div>
     ${(f.overview || []).map(o => `<div class="ov"><h4>${esc(o.title)}<small>${esc(o.en)}</small></h4>${fmt(o.body)}</div>`).join("") || `<p class="empty">개요 항목이 없습니다.</p>`}
-    <div class="sec-h"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${esc(f.mapLabel || (pts.length ? pts.length + " SITES" : ""))} ${ed("fmap")}</div></div>
+    <div class="sec-h" id="s-map"><div><h2>${esc(f.mapTitle)}</h2><small>${esc(f.mapSub)}</small></div><div class="r">${esc(f.mapLabel || (pts.length ? pts.length + " SITES" : ""))} ${ed("fmap")}</div></div>
     <div class="map ${f.mapImg ? "has" : ""}">${f.mapImg ? `<img data-img="${esc(f.mapImg)}" alt="">` : "MAP · 이미지 준비 중"}
-      ${note ? `<p class="map-note">${note}</p>` : ""}
+      ${k === "milgram" ? "" : note ? `<p class="map-note">${note}</p>` : `<p class="map-note adm ph" data-a="edit:fmap">좌측 상단 글 1줄<br>좌측 상단 글 2줄 (눌러서 입력)</p>`}
       ${pts.map((p, i) => `<button class="pt ${p.hot ? "hot" : ""} ${p.side === "l" ? "l" : ""}" style="left:${Number(p.x ?? 50)}%;top:${Number(p.y ?? 50)}%" data-a="pt:${i}"><i></i><b>${esc(p.label)}</b></button>`).join("")}</div>
     ${stats.length ? `<div class="mstats">${stats.map(s => `<span>${esc(s.k)}<b>${esc(s.v)}</b></span>`).join("")}</div>` : ""}
     ${chron}
-    <div class="sec-h"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${k === "milgram" ? "" : esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
+    <div class="sec-h" id="s-units"><div><h2>${esc(f.unitsTitle)}</h2><small>${esc(f.unitsSub)}</small></div><div class="r">${k === "milgram" ? "" : esc(f.unitsLabel || (f.units || []).length + " UNITS")} ${ed("funits")}</div></div>
     <div class="units">${(f.units || []).map((u, i) => `<article class="unit tg" data-pos="fac|${k}|units.${i}.imgPos"><div class="unit-img pos-t" ${bgAttr(u.img, u.imgPos)}></div>
       <button class="unit-top tg-h" data-a="tog"><span class="code">${esc(u.code)}</span><span class="tag">${esc(u.tag)}</span><h4>${esc(u.name)}</h4><p class="sub">${esc(u.sub)}</p><span class="plus">+</span></button>
       <div class="tg-b"><div>${fmt(u.body)}</div></div></article>`).join("")}</div>
@@ -104,7 +104,7 @@ function people() {
   const rest = groups.length ? list.filter(c => !groups.some(g => g.name === c.group)).length : 0;
   const count = groups.length ? [...groups.map(g => `${esc(g.name)} ${list.filter(c => c.group === g.name).length}`), ...(rest ? [`미분류 ${rest}`] : [])].join(" / ") : list.length;
   return `<section id="people" class="sec wrap">
-    <div class="sec-h fold-h" data-a="fold:people"><div><h2>Personnel</h2><small>주요 인물 · ${count} · ${S.fac === "milgram" ? "칸을" : "카드를"} 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">눌러서 열기 / 닫기 <button class="plus">${S.fold.people ? "+" : "−"}</button> ${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
+    <div class="sec-h fold-h" id="s-people" data-a="fold:people"><div><h2>Personnel</h2><small>주요 인물 · ${count} · ${S.fac === "milgram" ? "칸을" : "카드를"} 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">눌러서 열기 / 닫기 <button class="plus">${S.fold.people ? "+" : "−"}</button> ${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
     <div class="${S.fold.people ? "shut" : ""}" data-fold="people">${body}
     <div id="file"></div></div></section>`;
 }
@@ -169,7 +169,10 @@ function drawFile(scroll) {
 function render() {
   document.body.dataset.faction = document.documentElement.dataset.faction = S.fac;
   document.body.dataset.view = S.view || "";
-  document.getElementById("facsw").innerHTML = FAC.map(k => `<button data-faction="${k}" class="${S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(S.factions[k].short || S.factions[k].name)}</button>`).join("");
+  document.getElementById("facsw").innerHTML = FAC.map(k => { const f = S.factions[k];
+    const toc = [["s-ov", "Overview"], ["s-map", f.mapTitle || "Territory"], ...(k === "ww" ? [] : [["s-chron", f.chronTitle || "Chronicle"]]), ["s-units", f.unitsTitle || "Squad"], ["s-people", "Personnel"]];
+    return `<div class="fsw ${S.fac === k ? "on" : ""}" data-faction="${k}"><button class="${S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(f.short || f.name)}</button>
+      ${S.fac === k ? `<nav class="toc">${toc.map(([id, l]) => `<button data-a="jump:${id}" data-toc="${id}">${esc(l)}</button>`).join("")}</nav>` : ""}</div>`; }).join("");
   app.innerHTML = hero(S.site) + (S.view === "world" ? world(S.site) : S.view === "faction" ? faction(S.factions[S.fac]) + people() : S.view === "trivia" ? trivia() : "");
   drawFile();
   hydrate(app);
@@ -279,7 +282,14 @@ const ACT = {
   fac(k) { S.fac = k; S.openChar = null; render(); },
   // 화면 고르기: 메인 아래에 붙이고 페이지 넘김으로 내려간다
   view(k) { S.view = k; S.openChar = null; render(); requestAnimationFrame(() => slideTo(heroH())); },
-  go(k) { S.fac = k; ACT.view("faction"); },
+  go(k) { if (S.fac === k && S.view === "faction") return ACT.jump("s-ov"); S.fac = k; ACT.view("faction"); },
+  // 목차: 해당 섹션으로 이동 (접혀 있으면 펼친다)
+  jump(id) {
+    const el = document.getElementById(id); if (!el) return;
+    const k = el.dataset.a?.startsWith("fold:") && el.dataset.a.slice(5);
+    if (k && S.fold[k]) ACT.fold(k, el);
+    slideTo(el.getBoundingClientRect().top + scrollY - 72);
+  },
   hmf(_, el) { el.closest(".hmenu").classList.toggle("open"); },
   top() { slideTo(0); },
   tog(_, el) { el.closest(".tg").classList.toggle("open"); },
@@ -459,7 +469,14 @@ addEventListener("keydown", e => {
   const d = ["ArrowDown", "PageDown", " "].includes(e.key) ? 1 : ["ArrowUp", "PageUp"].includes(e.key) ? -1 : 0;
   if (d && pageTurn(d)) e.preventDefault();
 });
-addEventListener("scroll", () => document.body.classList.toggle("scrolled", scrollY > innerHeight * 0.5), { passive: true });
+addEventListener("scroll", () => {
+  document.body.classList.toggle("scrolled", scrollY > innerHeight * 0.5);
+  // 목차: 지금 보고 있는 섹션 표시
+  const bs = [...document.querySelectorAll("#facsw [data-toc]")]; if (!bs.length) return;
+  let cur = null;
+  bs.forEach(b => { const el = document.getElementById(b.dataset.toc); if (el && el.getBoundingClientRect().top < innerHeight * 0.4) cur = b; });
+  bs.forEach(b => b.classList.toggle("cur", b === cur));
+}, { passive: true });
 let ty = null;
 addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
 addEventListener("touchmove", e => {

@@ -154,3 +154,6 @@
 .pf-cols.has-side .pf-sidebox::before{height:var(--bh,14%);background:linear-gradient(to top,color-mix(in srgb,var(--bg) calc(var(--ba,1)*100%),transparent),transparent)}
 /* 왼쪽 페이드: 범위의 앞쪽 35%는 꽉 채우고 그 뒤로 사라지게 해서 이미지 위에서도 확실히 보이게 */
 .pf-cols.has-side .pf-sidebox::after{background:linear-gradient(to right,color-mix(in srgb,var(--bg) calc(var(--fa,.9)*100%),transparent) 0%,color-mix(in srgb,var(--bg) calc(var(--fa,.9)*100%),transparent) 35%,transparent)}
+
+/* v11: 칩은 블러 없이 반투명만 */
+.pf-chip,.pf-sidebox .pf-chip,.pf-sanchor .pf-chip{backdrop-filter:none;-webkit-backdrop-filter:none}
