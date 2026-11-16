@@ -5,7 +5,7 @@ import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, n
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
-import { PACT, drawPersona, openPersona } from "./persona.js";
+import { PACT, hooks, drawPersona, openPersona } from "./persona.js";
 
 const app = document.getElementById("app");
 S.fold = { people: false, chron: false };
@@ -19,6 +19,8 @@ S.tags = []; // Trivia에서 고른 태그들 (하나라도 붙은 메모가 보
 S.q = ""; S.memoP = 0; // Trivia 검색어와 현재 쪽(0부터)
 const MEMO_PER = 15;
 const facChars = () => S.chars.filter(c => c.faction === S.fac);
+const anyChar = id => S.chars.find(x => x.id === id) || S.personas.find(x => x.id === id);
+const redraw = () => { drawFile(); drawPersona(); };
 
 // ---------- 화면 ----------
 function hero(s) {
@@ -141,20 +143,23 @@ function trivia() {
     <div id="memos">${memoList()}</div>
     <footer class="end"><div class="barcode"></div><span>© AFTERMESS</span></footer></section>`;
 }
+// ASSET 탭 내용 (캐릭터 파일과 페르소나 파일이 같이 쓴다)
+function assetsHtml(c) {
+  const a = (c.assets || []).filter(x => x.img), groups = (c.assetGroups || []).filter(g => g.name), names = groups.map(g => g.name);
+  const fig = x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`;
+  const add = (g, txt) => `<label class="btn adm" style="cursor:pointer">${txt}<input type="file" class="asset-add" data-char="${c.id}" data-g="${esc(g)}" accept="image/*" multiple hidden></label>`;
+  const sect = (g, label) => { const xs = a.filter(x => g ? x.g === g : !names.includes(x.g));
+    return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
+  return `<div class="file-pad" data-achar="${c.id}">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
+    ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
+    <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
+}
 function fileHtml(c) {
   const has = c.useProfile !== false, cur = !has && S.tab === "profile" ? "assets" : S.tab;
   const tab = (k, l) => `<button class="${cur === k ? "on" : ""}" data-a="tab:${k}">${l}</button>`;
   let body;
-  if (cur === "assets") {
-    const a = (c.assets || []).filter(x => x.img), groups = (c.assetGroups || []).filter(g => g.name), names = groups.map(g => g.name);
-    const fig = x => `<figure ${S.user ? 'draggable="true"' : ""} class="asset" data-asset="${x.img}" data-a="full:${x.img}"><div data-img="${thumbId(x.img)}"></div><button class="ax" data-a="delasset:${c.id}:${x.img}" title="삭제">✕</button></figure>`;
-    const add = (g, txt) => `<label class="btn adm" style="cursor:pointer">${txt}<input type="file" class="asset-add" data-char="${c.id}" data-g="${esc(g)}" accept="image/*" multiple hidden></label>`;
-    const sect = (g, label) => { const xs = a.filter(x => g ? x.g === g : !names.includes(x.g));
-      return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
-    body = `<div class="file-pad">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
-      ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
-  } else if (cur === "memo") {
+  if (cur === "assets") body = assetsHtml(c);
+  else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
   } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos`, spos: `char|${c.id}|sideImg` });
@@ -242,8 +247,8 @@ const EDIT = {
       onDelete: async () => { await delChar(id); S.openChar = null; render(); } });
   },
   agroups: id => {
-    const c = S.chars.find(x => x.id === id);
-    openForm({ title: `에셋 그룹 · ${c.name || c.num || ""}`, schema: [{ k: "assetGroups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "일러스트")] }], data: c, onSave: async v => { await saveChar(v); drawFile(); } });
+    const c = anyChar(id);
+    openForm({ title: `에셋 그룹 · ${c.name || c.num || ""}`, schema: [{ k: "assetGroups", label: "그룹 (비워 두면 구분 없이 한 목록으로 표시)", type: "list", item: "그룹", fields: [T("name", "이름", "일러스트")] }], data: c, onSave: async v => { await saveChar(v); redraw(); } });
   },
   memo: id => editMemo(S.memos.find(m => m.id === id)),
   newmemo: () => editMemo({ id: newId("m"), title: "", body: "", imgs: [], charIds: [], tags: [], at: Date.now() }, true)
@@ -322,22 +327,22 @@ const ACT = {
   page(n) { S.memoP = +n; drawMemos(); document.getElementById("trivia")?.scrollIntoView({ behavior: "instant", block: "start" }); },
   secret(_, el) { toggleSecret(el); },
   full(id, el) {
-    const asset = el.matches(".asset"), cid = S.openChar;
-    const ids = [...(asset ? document.querySelectorAll("#file .asset") : el.closest(".agrid")?.querySelectorAll("[data-a^='full:']") || [el])].map(x => x.dataset.a.slice(5));
-    const c = asset && S.chars.find(x => x.id === cid), caps = {};
+    const pad = el.closest("[data-achar]"), asset = el.matches(".asset") && !!pad, cid = pad?.dataset.achar;
+    const ids = [...(asset ? pad.querySelectorAll(".asset") : el.closest(".agrid")?.querySelectorAll("[data-a^='full:']") || [el])].map(x => x.dataset.a.slice(5));
+    const c = asset && anyChar(cid), caps = {};
     if (c) (c.assets || []).forEach(x => { if (x.cap) caps[x.img] = x.cap; });
     lightbox(ids, Math.max(0, ids.indexOf(id)), !c ? {} : { caps, onCap: !S.user ? null : async (img, cap) => {
-      const cur = S.chars.find(x => x.id === cid); if (!cur) return;
+      const cur = anyChar(cid); if (!cur) return;
       try { await saveChar({ ...cur, assets: (cur.assets || []).map(x => x.img === img ? { ...x, cap } : x) }); toast("설명을 저장했습니다"); }
       catch (e) { console.error(e); toast("설명을 저장하지 못했습니다. " + why(e)); }
     } });
   },
   async delasset(arg) {
-    const [cid, img] = arg.split(":"), c = S.chars.find(x => x.id === cid);
+    const [cid, img] = arg.split(":"), c = anyChar(cid);
     if (!c || !confirm("이 사진을 삭제할까요? 되돌릴 수 없습니다.")) return;
     try { await saveChar({ ...c, assets: (c.assets || []).filter(x => x.img !== img) }); delImage(img); toast("삭제했습니다"); }
     catch (e) { console.error(e); toast("삭제하지 못했습니다. " + why(e)); }
-    drawFile();
+    redraw();
   },
   pt(i, el) {
     if (ptMoved) return;
@@ -358,7 +363,7 @@ const ACT = {
   trkopen(_, el) { toggleTrackText(el); },
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
-Object.assign(ACT, PACT);
+Object.assign(ACT, PACT); hooks.assets = assetsHtml;
 document.addEventListener("click", e => {
   if (e.target.closest(".lb-cap.edit")) return;
   if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }
@@ -589,7 +594,7 @@ document.addEventListener("pointerup", () => {
 let dragEl = null, dragLock = 0;
 const CARD = ".pcard,.lcard,.asset";
 function flip(change) {
-  const els = [...document.querySelectorAll("#people .pcard, #people .lcard, #people .asset")];
+  const els = [...document.querySelectorAll("#people .pcard, #people .lcard, .asset")];
   const before = new Map(els.map(el => [el, el.getBoundingClientRect()]));
   change();
   els.forEach(el => {
@@ -609,7 +614,7 @@ document.addEventListener("dragstart", e => {
 document.addEventListener("dragover", e => {
   if (!dragEl) return;
   const asset = dragEl.matches(".asset");
-  const over = e.target.closest(CARD), box = e.target.closest(asset ? "#file .agrid[data-agroup]" : "#people .pgrid, #people .lgrid");
+  const over = e.target.closest(CARD), box = e.target.closest(asset ? ".agrid[data-agroup]" : "#people .pgrid, #people .lgrid");
   if (asset ? (over ? !over.matches(".asset") : !box) : (over?.matches(".asset") || (!over && !box))) return;
   e.preventDefault();
   if (performance.now() < dragLock) return;
@@ -623,12 +628,12 @@ document.addEventListener("dragover", e => {
 document.addEventListener("drop", e => { if (dragEl) e.preventDefault(); });
 document.addEventListener("dragend", async () => {
   if (!dragEl) return;
-  const asset = dragEl.matches(".asset");
+  const asset = dragEl.matches(".asset"), pad = dragEl.closest("[data-achar]");
   dragEl.classList.remove("dragging"); dragEl = null;
   if (asset) {
     // 에셋: 화면에 놓인 순서대로 저장
-    const c = S.chars.find(x => x.id === S.openChar); if (!c) return;
-    const next = [...document.querySelectorAll("#file .asset")].map(el => {
+    const c = anyChar(pad?.dataset.achar); if (!c) return;
+    const next = [...pad.querySelectorAll(".asset")].map(el => {
       const x = (c.assets || []).find(a => a.img === el.dataset.asset), g = el.closest("[data-agroup]")?.dataset.agroup;
       return x && (g == null ? x : { ...x, g });
     }).filter(Boolean);
@@ -636,7 +641,7 @@ document.addEventListener("dragend", async () => {
     if (key(next) === key(c.assets || [])) return;
     try { await saveChar({ ...c, assets: next }); toast("순서를 저장했습니다"); }
     catch (err) { console.error(err); toast("순서를 저장하지 못했습니다. " + why(err)); }
-    drawFile();
+    redraw();
     return;
   }
   // 화면에 놓인 순서와 그룹을 그대로 저장한다
@@ -669,21 +674,21 @@ async function addAssets(c, files, g) {
     }
   } catch (err) { console.error(err); toast("일부 사진을 올리지 못했습니다. " + why(err)); }
   if (added.length) {
-    const cur = S.chars.find(x => x.id === c.id) || c;
+    const cur = anyChar(c.id) || c;
     try { await saveChar({ ...cur, assets: [...(cur.assets || []), ...added] }); if (added.length === files.length) toast(`사진 ${added.length}장을 추가했습니다`); }
     catch (err) { console.error(err); added.forEach(x => delImage(x.img)); toast("저장하지 못했습니다. " + why(err)); }
   }
-  drawFile();
+  redraw();
 }
 document.addEventListener("change", e => {
   const inp = e.target;
   if (!inp.classList?.contains("asset-add")) return;
   const files = [...inp.files]; inp.value = "";
-  addAssets(S.chars.find(x => x.id === inp.dataset.char), files, inp.dataset.g);
+  addAssets(anyChar(inp.dataset.char), files, inp.dataset.g);
 });
 // 컴퓨터의 사진 파일을 ASSET 탭 위로 끌어오면 놓을 자리가 표시된다
 const fileDrag = e => !dragEl && S.user && [...(e.dataTransfer?.types || [])].includes("Files");
-const dropPad = e => e.target.closest?.("#file .file-pad:has(.asset-add)");
+const dropPad = e => e.target.closest?.(".file-pad:has(.asset-add)");
 document.addEventListener("dragover", e => {
   if (!fileDrag(e)) return;
   const pad = dropPad(e);
@@ -693,14 +698,14 @@ document.addEventListener("dragover", e => {
   pad.classList.add("drop-on");
   pad.querySelectorAll(".agrid[data-agroup]").forEach(x => x.classList.toggle("drop-on", x === e.target.closest(".agrid[data-agroup]")));
 });
-document.addEventListener("dragleave", e => { if (fileDrag(e) && !e.relatedTarget?.closest?.("#file .file-pad")) document.querySelectorAll(".drop-on").forEach(x => x.classList.remove("drop-on")); });
+document.addEventListener("dragleave", e => { if (fileDrag(e) && !e.relatedTarget?.closest?.(".file-pad")) document.querySelectorAll(".drop-on").forEach(x => x.classList.remove("drop-on")); });
 document.addEventListener("drop", e => {
   if (!fileDrag(e)) return;
   const pad = dropPad(e);
   document.querySelectorAll(".drop-on").forEach(x => x.classList.remove("drop-on"));
   if (!pad) return;
   e.preventDefault();
-  addAssets(S.chars.find(x => x.id === S.openChar), [...e.dataTransfer.files], e.target.closest(".agrid[data-agroup]")?.dataset.agroup || "");
+  addAssets(anyChar(pad.dataset.achar), [...e.dataTransfer.files], e.target.closest(".agrid[data-agroup]")?.dataset.agroup || "");
 });
 document.addEventListener("keydown", e => {
   if (!document.getElementById("lb").classList.contains("on") || e.target.closest?.("input,textarea")) return;

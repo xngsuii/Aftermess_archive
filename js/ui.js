@@ -225,8 +225,8 @@ export function buildFields(schema, obj, ctx = {}) {
         pv.textContent = v ? "" : "이미지 없음";
         pv.style.backgroundImage = v ? `url("${v.startsWith("data:") ? v : await getImage(v)}")` : "";
       };
-      inp.onchange = async () => {
-        const file = inp.files[0]; if (!file) return;
+      const take = async file => {
+        if (!file) return;
         pv.style.backgroundImage = ""; pv.textContent = "처리 중…";
         try {
           if (ctx.local) obj[f.k] = await compress(file, f.max || 1400, 700000);
@@ -235,6 +235,11 @@ export function buildFields(schema, obj, ctx = {}) {
         } catch (e) { console.error(e); toast("이미지를 올리지 못했습니다. " + why(e)); }
         inp.value = ""; show(); ch();
       };
+      inp.onchange = () => take(inp.files[0]);
+      // 이미지 파일을 이 칸 위로 끌어다 놓아도 들어간다
+      w.ondragover = e => { if ([...e.dataTransfer.types].includes("Files")) { e.preventDefault(); e.stopPropagation(); w.classList.add("drop-on"); } };
+      w.ondragleave = e => { if (!w.contains(e.relatedTarget)) w.classList.remove("drop-on"); };
+      w.ondrop = e => { e.preventDefault(); e.stopPropagation(); w.classList.remove("drop-on"); take([...e.dataTransfer.files].find(x => x.type.startsWith("image/"))); };
       rm.onclick = () => { obj[f.k] = ""; show(); ch(); };
       show(); box.append(pv, inp, rm); w.append(box);
     } else if (f.type === "select") {

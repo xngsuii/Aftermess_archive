@@ -128,20 +128,23 @@ async function exportPng(btn) {
     download(fileName() + ".png", await (await fetch(url)).blob());
   } catch (e) { console.error(e); toast("이미지를 만들지 못했습니다."); }
   fit = wasFit; preview();
-  btn.disabled = false; btn.textContent = "이미지 저장";
+  btn.disabled = false; btn.textContent = "저장 ▾";
 }
 
 async function build() {
   built = true;
   data = { ...BLANK(), ...((await load()) || {}) };
   const el = document.getElementById("editor");
-  el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back">← 돌아가기</button><h3>프로필 편집기</h3>
-    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><button class="btn" id="ed-json">파일 저장</button><button class="btn" id="ed-html">HTML 저장</button><button class="btn pri" id="ed-png">이미지 저장</button></div>
+  el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back" aria-label="돌아가기" title="돌아가기">←</button><h3>PROFILE EDITOR</h3>
+    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><div class="dd" id="ed-save"><button class="btn pri" id="ed-save-b">저장 ▾</button><div class="dd-m"><button id="ed-json">JSON 저장</button><button id="ed-html">HTML 저장</button><button id="ed-png">이미지 저장 (PNG)</button></div></div></div>
     <div class="ed-grid"><div class="ed-pv" id="ed-pv"></div><div class="ed-form" id="ed-form"></div></div>`;
   form(); preview(); bindImage(el.querySelector("#ed-pv"));
   el.querySelector("#ed-fit").onclick = e => { fit = !fit; e.currentTarget.textContent = fit ? "100% 보기" : "맞춤 보기"; applyFit(); };
   el.querySelector("#ed-html").onclick = () => exportHtml().catch(e => { console.error(e); toast("HTML을 만들지 못했습니다."); });
-  el.querySelector("#ed-png").onclick = e => exportPng(e.currentTarget);
+  el.querySelector("#ed-png").onclick = () => exportPng(el.querySelector("#ed-save-b"));
+  // 저장 메뉴: 누르면 펼치고, 항목을 고르거나 바깥을 누르면 닫힌다
+  const dd = el.querySelector("#ed-save");
+  document.addEventListener("click", e => dd.classList.toggle("open", e.target.id === "ed-save-b" && !dd.classList.contains("open")));
   // 파일 저장: 나중에 다시 불러오거나 페르소나 페이지에 올릴 수 있는 프로필 파일
   el.querySelector("#ed-json").onclick = () => download(fileName() + ".json", new Blob([packProfile(data)], { type: "application/json" }));
   el.querySelector("#ed-open").onchange = async e => {

@@ -599,3 +599,21 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .psecret i{width:44px;height:3px;background:var(--accent);margin:6px 0}
 .psecret p{font-size:15px;font-weight:800;margin:0;letter-spacing:.04em}
 .psecret span{font-size:11px;color:var(--fg3);letter-spacing:.08em}
+
+/* v28: 카드 페이드가 가장자리에서 어긋나 보이지 않게 조금 넘치게 덮는다 */
+.pc-f.img::after,.pc-b::before{inset:-2px}
+/* Secret File: 기울어진 도장 */
+.psecret p{order:0}
+.psecret .stamp{display:inline-block;margin:44px 0 40px;padding:12px 30px 9px;border:7px solid var(--c-ww);border-radius:12px;color:var(--c-ww);transform:rotate(-11deg);
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.32' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 -1.7'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.32' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 -1.7'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")}
+.psecret .stamp b{display:block;color:var(--c-ww);font-size:clamp(34px,8.4vw,74px);font-weight:900;letter-spacing:.03em;line-height:1;white-space:nowrap;text-transform:uppercase}
+/* 이미지 칸에 파일을 끌어왔을 때 */
+.drop-on>.imgf .imgf-pv{outline:2px dashed var(--accent);outline-offset:2px}
+/* 편집기 저장 메뉴 */
+.dd{position:relative}
+.dd-m{position:absolute;right:0;top:calc(100% + 4px);display:none;flex-direction:column;min-width:160px;background:var(--bg2);border:1px solid var(--line);z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.dd.open .dd-m{display:flex}
+.dd-m button{padding:10px 14px;font-size:12px;font-weight:700;text-align:left;color:var(--fg)}
+.dd-m button:hover{background:var(--bg3)}
+.dd-m button+button{border-top:1px solid var(--line)}

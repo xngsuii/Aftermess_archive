@@ -11,23 +11,24 @@ const pairOf = p => S.chars.find(c => c.id === p.pairId);
 // 페어 프로필이 아직 없으면 Secret File로 보여 준다
 const hasProfile = c => !!c && c.useProfile !== false && !!(c.mainImg || c.sideImg || c.profile || c.intro || c.record || c.tagline);
 // 프로필 파일을 불러와도 남겨 두는 값 (카드 설정과 페어)
-const CARD_KEYS = ["id", "pfac", "pairId", "order", "name", "cardNo", "front", "frontPos", "thumb", "thumbPos", "gender", "role"];
-let built = false, open = null, side = "me"; // open: 열린 페르소나, side: "me" | "pair"
+const CARD_KEYS = ["id", "pfac", "pairId", "order", "name", "cardNo", "frontSub", "frontMain", "assets", "assetGroups", "front", "frontPos", "thumb", "thumbPos", "gender", "role"];
+let built = false, open = null, side = "me"; // open: 열린 페르소나, side: "me" | "pair" | "asset"
+export const hooks = {}; // app.js가 ASSET 탭 그리는 함수를 넣어 준다
 
-const card = p => { const pr = pairOf(p);
-  return `<div class="pcard ${p.id === open ? "flip" : ""}" data-id="${p.id}" data-a="pchar:${p.id}"><div class="pc-in">
-    <div class="pc-f ${p.front ? "img" : ""}" data-pos="char|${p.id}|frontPos" ${bgAttr(p.front, p.frontPos)}><b>${esc(p.cardNo || p.num)}</b>${p.front ? "" : SIL}
-      <div class="ft"><small>PAIR</small><strong>× ${pr ? esc(nameOf(pr)) : "———"}</strong></div></div>
+// 카드 앞면은 진영의 Personnel 양식을 따른다: W.W는 번호, MILGRAM은 소속과 DIV, 그 밖에는 글 없음
+const card = p => `<div class="pcard ${p.id === open ? "flip" : ""}" data-id="${p.id}" data-a="pchar:${p.id}"><div class="pc-in">
+    <div class="pc-f ${p.front ? "img" : ""}" data-pos="char|${p.id}|frontPos" ${bgAttr(p.front, p.frontPos)}>${p.pfac === "ww" ? `<b>${esc(p.cardNo || p.num)}</b>` : ""}${p.front ? "" : SIL}
+      ${p.pfac === "milgram" ? `<div class="ft"><small>${esc(p.frontSub)}</small><strong>${esc(p.frontMain)}</strong></div>` : ""}</div>
     <div class="pc-b" data-pos="char|${p.id}|thumbPos" ${bgAttr(p.thumb, p.thumbPos)}><b>${esc(p.name)}</b><i></i><span>${esc(p.gender)}</span><span>${esc(p.role)}</span></div>
-  </div></div>`; };
+  </div></div>`;
 
 function fileHtml(p) {
   const pr = pairOf(p), me = side === "me";
   const tab = (k, l) => `<button class="${side === k ? "on" : ""}" data-a="pside:${k}">${l}</button>`;
-  const body = me ? renderProfile(p, { pos: `char|${p.id}|mainImgPos`, spos: `char|${p.id}|sideImg` })
+  const body = side === "asset" ? hooks.assets(p) : me ? renderProfile(p, { pos: `char|${p.id}|mainImgPos`, spos: `char|${p.id}|sideImg` })
     : hasProfile(pr) ? renderProfile(pr, {})
-    : `<div class="psecret"><small>AFTERMESS · PERSONNEL FILE</small><strong>Secret<br>File</strong><i></i><p>${pr ? esc(nameOf(pr)) : "UNKNOWN"}</p><span>ACCESS DENIED · 아직 열람할 수 없는 기록입니다</span></div>`;
-  return `<div class="file" data-faction="${me ? p.pfac || "none" : pr?.faction || "none"}"><div class="tabs">${tab("me", esc(p.num || p.name || "PERSONA"))}${tab("pair", pr ? esc(pr.num || pr.name || "PAIR") : "SECRET")}<span class="sp"></span>
+    : `<div class="psecret"><small>AFTERMESS · PERSONNEL FILE</small><p>${pr ? esc(nameOf(pr)) : "UNKNOWN"}</p><div class="stamp"><b>SECRET FILE</b></div><span>ACCESS DENIED · 아직 열람할 수 없는 기록입니다</span></div>`;
+  return `<div class="file" data-faction="${side === "pair" ? pr?.faction || "none" : p.pfac || "none"}"><div class="tabs">${tab("me", esc(p.num || p.name || "PERSONA"))}${tab("pair", pr ? esc(pr.num || pr.name || "PAIR") : "SECRET")}${tab("asset", "ASSET")}<span class="sp"></span>
       <label class="ed" style="cursor:pointer">프로필 파일 불러오기<input type="file" class="ps-file" data-id="${p.id}" accept=".json,.html,.htm" hidden></label>
       <button class="ed" data-a="pedit:${p.id}">페르소나 편집</button></div>
     <div class="pflip"><div class="file-b">${body}</div></div></div>`;
@@ -49,8 +50,8 @@ export function drawPersona() {
     return `<div data-faction="${k}"><div class="grp"><b>${esc(n)}</b><small>${esc(en)}</small><i></i><span>${String(ps.length).padStart(2, "0")}</span></div><div class="pgrid">${ps.map(card).join("")}</div></div>`;
   }).join("");
   el.innerHTML = `<div class="ed-bar ps-bar"><h3>PERSONA</h3>
-      ${S.user ? `<button class="btn" data-a="pnew">+ 페르소나 추가</button><label class="btn" style="cursor:pointer">프로필 파일로 추가<input type="file" class="ps-file" accept=".json,.html,.htm" hidden></label>` : ""}
-      <button class="btn" data-a="pback">아카이브로 →</button></div>
+      ${S.user ? `<button class="btn" data-a="pnew">ADD PROFILE</button><label class="btn" style="cursor:pointer">IMPORT PROFILE<input type="file" class="ps-file" accept=".json,.html,.htm" hidden></label>` : ""}
+      <button class="btn" data-a="pback">ARCHIVE →</button></div>
     <div class="ps-body"><section class="sec wrap">
       <p class="kicker">AFTERMESS<br>PERSONA FILE</p>
       <h2 class="fname">Persona</h2><p class="fsub">// personal record · ${String(S.personas.length).padStart(2, "0")} subjects · 카드를 누르면 정보 열람</p>
@@ -80,14 +81,15 @@ const schema = () => [
   { k: "pairId", label: "페어 캐릭터 (프로필이 없으면 Secret File로 표시)", type: "select",
     options: [["", "(없음)"], ...[...S.chars].sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction)).map(c => [c.id, `${facName(c.faction)[0]} · ${nameOf(c) || "이름 없음"}`])] },
   T("order", "순서 (작은 수가 앞)", "0"),
-  T("cardNo", "NUMBER (카드 앞면 좌상단)", "07"),
+  T("cardNo", "NUMBER (W.W일 때 카드 앞면 좌상단)", "07"),
+  T("frontSub", "소속 (MILGRAM일 때 카드 앞면 작은 글)", "MAIN ELEMENT"), T("frontMain", "DIV (MILGRAM일 때 카드 앞면 굵은 글)", "HIGH COMMAND"),
   { k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. 저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." },
   { k: "thumb", label: "카드 뒷면 이미지", type: "inline", max: 480, limit: 90000 },
   T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG"),
   T("role", "직무 (카드 뒷면)", "Entry-Fragger"),
   ...PROFILE_FIELDS.filter(f => f.k !== "useProfile")];
 const nextOrder = () => S.personas.reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1;
-const blank = () => ({ id: newId("p"), persona: true, faction: "persona", pfac: "ww", pairId: "", order: nextOrder(), affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
+const blank = () => ({ id: newId("p"), persona: true, faction: "persona", pfac: "ww", pairId: "", order: nextOrder(), affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [], assets: [] });
 
 // 파일 안의 이미지(data URL)를 서버 이미지로 올리고 id로 바꾼다
 async function upload(o) {
