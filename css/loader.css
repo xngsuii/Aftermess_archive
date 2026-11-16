@@ -188,3 +188,5 @@
 .lz-enter:disabled{border-color:rgba(255,255,255,.2);background:none;color:var(--d);animation:none;cursor:not-allowed}
 .lz-enter:disabled:hover{background:none}
 #loader>.lz-r{padding-bottom:118px}
+/* 오른쪽 칸이 짧으면 권총 그림이 줄어들어 ACCESS와 겹치지 않는다 */
+#loader>.lz-r .lz-gun{flex:1 1 0;min-height:0;height:auto}

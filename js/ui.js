@@ -238,10 +238,18 @@ export function buildFields(schema, obj, ctx = {}) {
       const draw = () => {
         box.innerHTML = "";
         if (f.all && opts.length) {
-          const full = opts.every(o => obj[f.k].includes(o[0]));
-          const b = h("button", "pill all", full ? "전원 해제" : "전원 선택"); b.type = "button";
-          b.onclick = () => { obj[f.k] = full ? [] : opts.map(o => o[0]); draw(); ch(); };
-          box.append(b);
+          // 윗줄: 전원 선택 + 묶음별(f.groups: [[값, 이름]]) 전원 선택. 옵션의 세 번째 값이 묶음.
+          const toggle = (cls, label, vs) => {
+            if (!vs.length) return;
+            const full = vs.every(v => obj[f.k].includes(v));
+            const b = h("button", "pill all " + cls + (full ? " on" : ""), label); b.type = "button";
+            b.title = full ? "모두 해제" : "모두 선택";
+            b.onclick = () => { obj[f.k] = full ? obj[f.k].filter(v => !vs.includes(v)) : [...new Set([...obj[f.k], ...vs])]; draw(); ch(); };
+            box.append(b);
+          };
+          toggle("", "전원 선택", opts.map(o => o[0]));
+          (f.groups || []).forEach(([g, label]) => toggle("grp", label, opts.filter(o => o[2] === g).map(o => o[0])));
+          box.append(h("i", "pills-br"));
         }
         opts.forEach(([v, l]) => {
           const b = h("button", "pill" + (obj[f.k].includes(v) ? " on" : ""), l); b.type = "button";

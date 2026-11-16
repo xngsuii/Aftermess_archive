@@ -16,6 +16,7 @@ export const PROFILE_FIELDS = [
   { type: "head", label: "Profile" },
   { k: "profile", label: "프로필 본문", type: "area" },
   { k: "sideImg", label: "옆 전신 이미지", type: "img" },
+  { k: "sideImgZoom", label: "전신 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 위치를 옮길 수 있습니다." },
   { k: "height", label: "키", ph: "189cm" },
   { k: "nation", label: "국적", ph: "홍콩인" },
   { k: "age", label: "나이", ph: "32" },
@@ -47,11 +48,12 @@ export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|short
 
 // ph: 내용이 비었을 때 틀만 보여 줄 자리 표시 (편집기 미리보기에서만 넘긴다)
 const sec = (title, sub, body, ph) => body || ph ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body || ph}</section>` : "";
-// 상단 이미지의 위치와 확대
-export const mainImgStyle = c => {
-  const pos = c.mainImgPos || "50% 0%", z = Math.max(1, +c.mainImgZoom || 1);
+// 이미지의 위치와 확대. key: "mainImg" | "sideImg"
+export const imgStyle = (c, key = "mainImg") => {
+  const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(1, +c[key + "Zoom"] || 1);
   return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:scale(${z})`;
 };
+export const mainImgStyle = c => imgStyle(c, "mainImg");
 
 function secret(c, opt) {
   if (!c.useSecret) return "";
@@ -103,7 +105,7 @@ export function renderProfile(c, opt = {}) {
       </div>
     </div>
     <div class="pf-cols"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
-      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>` : F ? `<div class="pf-sidebox pf-ph">SIDE IMAGE${chips}</div>` : chips}</aside>` : ""}
+      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} ${opt.spos ? `data-pos="${opt.spos}"` : ""} style="${imgStyle(c, "sideImg")}" alt="">${chips}</div>` : F ? `<div class="pf-sidebox pf-ph">SIDE IMAGE${chips}</div>` : chips}</aside>` : ""}
     </div>
     ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""), noTrk)}
     ${secret(c, opt)}

@@ -114,3 +114,7 @@
 .pf-main.pf-ph+.pf-id{margin-top:0}
 .pf-sidebox.pf-ph{min-height:380px}
 .pf-phx{opacity:.32}
+
+/* v7: 전신 이미지 확대 범위 고정, 위에 얹는 칩은 반투명 */
+.pf-sidebox{overflow:hidden}
+.pf-sidebox .pf-chip{background:color-mix(in srgb,var(--bg3) 52%,transparent);border-color:color-mix(in srgb,var(--fg) 14%,transparent);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}

@@ -97,8 +97,10 @@ function people() {
     body = groups.map(g => { const cs = list.filter(c => c.group === g.name); return head(g.name, g.en, cs.length) + block(cs, g.name); }).join("")
       + (rest.length ? head("미분류", "", rest.length) + block(rest, "") : "");
   } else body = list.length ? block(list, null) : none;
+  const rest = groups.length ? list.filter(c => !groups.some(g => g.name === c.group)).length : 0;
+  const count = groups.length ? [...groups.map(g => `${esc(g.name)} ${list.filter(c => c.group === g.name).length}`), ...(rest ? [`미분류 ${rest}`] : [])].join(" / ") : list.length;
   return `<section id="people" class="sec wrap">
-    <div class="sec-h fold-h" data-a="fold:people"><div><h2>Personnel</h2><small>주요 인물 · ${list.length} · 카드를 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">눌러서 열기 / 닫기 <button class="plus">${S.fold.people ? "+" : "−"}</button> ${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
+    <div class="sec-h fold-h" data-a="fold:people"><div><h2>Personnel</h2><small>주요 인물 · ${count} · ${S.fac === "milgram" ? "칸을" : "카드를"} 누르면 정보 열람${S.user ? " · 드래그로 순서 변경" : ""}</small></div><div class="r">눌러서 열기 / 닫기 <button class="plus">${S.fold.people ? "+" : "−"}</button> ${ed("fgroups", "그룹 편집")} ${ed("newchar", "+ 캐릭터 추가")}</div></div>
     <div class="${S.fold.people ? "shut" : ""}" data-fold="people">${body}
     <div id="file"></div></div></section>`;
 }
@@ -142,11 +144,11 @@ function fileHtml(c) {
       return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
     body = `<div class="file-pad">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
       ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가 (여러 장 선택 가능)")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
+      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가 (여러 장 선택 가능)")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
   } else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
-  } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos` });
+  } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos`, spos: `char|${c.id}|sideImgPos` });
   return `<div class="file"><div class="tabs">${has ? tab("profile", esc(c.num || c.name || "PROFILE")) : ""}${tab("assets", "ASSET")}${tab("memo", "MEMO")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
 }
 function drawFile(scroll) {
@@ -189,7 +191,9 @@ const charSchema = () => {
 const memoSchema = () => [T("title", "제목"), { k: "body", label: "내용", type: "area", rows: 18 },
   { k: "imgs", label: "이미지", type: "imgs" },
   { type: "head", label: "태그 (눌러서 펼치기)" },
-  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true, options: S.chars.map(c => [c.id, c.num || c.name || "이름 없음"]) },
+  { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true,
+    groups: FAC.map(k => [k, S.factions[k]?.short || S.factions[k]?.name || k]),
+    options: [...S.chars].sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction)).map(c => [c.id, c.num || c.name || "이름 없음", c.faction]) },
   { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
   openForm({ title: isNew ? "메모 추가" : "메모 편집", schema: memoSchema(), data: m,
@@ -464,7 +468,7 @@ const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 function applyAdj() {
   const { t, move, x, y, w } = adj;
   if (move) { t.style.left = x + "%"; t.style.top = y + "%"; t.style.width = w + "%"; }
-  else if (t.tagName === "IMG") t.style.objectPosition = `${x}% ${y}%`;
+  else if (t.tagName === "IMG") t.style.objectPosition = t.style.transformOrigin = `${x}% ${y}%`;
   else t.style.backgroundPosition = `${x}% ${y}%`;
 }
 function startAdjust(box) {
@@ -617,24 +621,50 @@ document.addEventListener("input", e => {
   S.q = e.target.value; S.memoP = 0; drawMemos();
 });
 
-// ---------- 에셋: 사진을 고르면 바로 올린다 (여러 장 가능) ----------
-document.addEventListener("change", async e => {
-  const inp = e.target;
-  if (!inp.classList?.contains("asset-add")) return;
-  const files = [...inp.files], c = S.chars.find(x => x.id === inp.dataset.char);
+// ---------- 에셋: 사진을 고르거나 끌어다 놓으면 바로 올린다 (여러 장 가능) ----------
+async function addAssets(c, files, g) {
+  files = files.filter(f => f.type.startsWith("image/"));
   if (!files.length || !c) return;
   const added = [];
   try {
     for (let i = 0; i < files.length; i++) {
       toast(`사진 올리는 중… ${i + 1} / ${files.length}`);
-      added.push({ img: await saveImage(files[i], { thumb: true }), g: inp.dataset.g || "" });
+      added.push({ img: await saveImage(files[i], { thumb: true }), g: g || "" });
     }
   } catch (err) { console.error(err); toast("일부 사진을 올리지 못했습니다. " + why(err)); }
   if (added.length) {
-    try { await saveChar({ ...c, assets: [...(c.assets || []), ...added] }); if (added.length === files.length) toast(`사진 ${added.length}장을 추가했습니다`); }
+    const cur = S.chars.find(x => x.id === c.id) || c;
+    try { await saveChar({ ...cur, assets: [...(cur.assets || []), ...added] }); if (added.length === files.length) toast(`사진 ${added.length}장을 추가했습니다`); }
     catch (err) { console.error(err); added.forEach(x => delImage(x.img)); toast("저장하지 못했습니다. " + why(err)); }
   }
   drawFile();
+}
+document.addEventListener("change", e => {
+  const inp = e.target;
+  if (!inp.classList?.contains("asset-add")) return;
+  const files = [...inp.files]; inp.value = "";
+  addAssets(S.chars.find(x => x.id === inp.dataset.char), files, inp.dataset.g);
+});
+// 컴퓨터의 사진 파일을 ASSET 탭 위로 끌어오면 놓을 자리가 표시된다
+const fileDrag = e => !dragEl && S.user && [...(e.dataTransfer?.types || [])].includes("Files");
+const dropPad = e => e.target.closest?.("#file .file-pad:has(.asset-add)");
+document.addEventListener("dragover", e => {
+  if (!fileDrag(e)) return;
+  const pad = dropPad(e);
+  document.querySelectorAll(".drop-on").forEach(x => x !== pad && x.classList.remove("drop-on"));
+  if (!pad) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = "copy";
+  pad.classList.add("drop-on");
+  pad.querySelectorAll(".agrid[data-agroup]").forEach(x => x.classList.toggle("drop-on", x === e.target.closest(".agrid[data-agroup]")));
+});
+document.addEventListener("dragleave", e => { if (fileDrag(e) && !e.relatedTarget?.closest?.("#file .file-pad")) document.querySelectorAll(".drop-on").forEach(x => x.classList.remove("drop-on")); });
+document.addEventListener("drop", e => {
+  if (!fileDrag(e)) return;
+  const pad = dropPad(e);
+  document.querySelectorAll(".drop-on").forEach(x => x.classList.remove("drop-on"));
+  if (!pad) return;
+  e.preventDefault();
+  addAssets(S.chars.find(x => x.id === S.openChar), [...e.dataTransfer.files], e.target.closest(".agrid[data-agroup]")?.dataset.agroup || "");
 });
 document.addEventListener("keydown", e => {
   if (!document.getElementById("lb").classList.contains("on") || e.target.closest?.("input,textarea")) return;

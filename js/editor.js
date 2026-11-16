@@ -1,10 +1,10 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, mainImgStyle } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, imgStyle } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
 const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
-let data = null, built = false, timer, fit = false, moving = false, grab = null;
+let data = null, built = false, timer, fit = false, moving = null, grab = null; // moving: 옮기는 중인 이미지 ("mainImg" | "sideImg")
 
 const idb = () => new Promise((ok, no) => {
   const r = indexedDB.open("afms-editor", 1);
@@ -24,48 +24,54 @@ function preview(frame = true) {
   const pv = document.getElementById("ed-pv");
   pv.dataset.faction = document.getElementById("editor").dataset.faction = data.faction;
   pv.innerHTML = renderProfile(data, { frame });
-  pv.classList.toggle("moving", moving && !!mainImg());
+  if (moving) imgOf(moving)?.classList.add("mv");
   applyFit();
 }
-const mainImg = () => document.querySelector("#ed-pv .pf-main img");
+const IMG_SEL = { mainImg: "#ed-pv .pf-main img", sideImg: "#ed-pv .pf-sidebox img" };
+const imgOf = k => document.querySelector(IMG_SEL[k]);
+const keyOf = el => Object.keys(IMG_SEL).find(k => imgOf(k) === el);
 // 맞춤 보기: 미리보기 전체가 한 화면에 들어오도록 줄인다
 function applyFit() {
   const pv = document.getElementById("ed-pv"), pf = pv?.querySelector(".pf"); if (!pf) return;
   pf.style.zoom = "";
   if (fit) pf.style.zoom = Math.min(1, (pv.clientHeight - 48) / pf.offsetHeight).toFixed(3);
 }
-// 상단 이미지: 더블클릭하면 끌어서 옮기고 휠로 확대한다
-function syncZoom() {
-  const r = document.querySelector('#ed-form input[data-k="mainImgZoom"]');
-  if (r) { r.value = data.mainImgZoom || 1; r.nextSibling.textContent = Math.round(r.value * 100) + "%"; }
+// 상단·전신 이미지: 더블클릭하면 끌어서 옮기고 휠로 확대한다
+function syncZoom(k) {
+  const r = document.querySelector(`#ed-form input[data-k="${k}Zoom"]`);
+  if (r) { r.value = data[k + "Zoom"] || 1; r.nextSibling.textContent = Math.round(r.value * 100) + "%"; }
 }
-function paintImg() { const im = mainImg(); if (im) im.style.cssText = mainImgStyle(data); clearTimeout(timer); timer = setTimeout(save, 500); }
-function setMoving(on) {
-  moving = on; grab = null;
-  document.getElementById("ed-pv").classList.toggle("moving", on);
-  toast(on ? "이미지를 끌어서 옮기고, 휠로 확대합니다. 다시 더블클릭하면 끝납니다." : "이미지 위치를 저장했습니다.");
+function paintImg(k) { const im = imgOf(k); if (im) im.style.cssText = imgStyle(data, k); clearTimeout(timer); timer = setTimeout(save, 500); }
+function setMoving(k) {
+  document.querySelectorAll("#ed-pv img.mv").forEach(x => x.classList.remove("mv"));
+  moving = k; grab = null;
+  if (k) imgOf(k)?.classList.add("mv");
+  toast(k ? "이미지를 끌어서 옮기고, 휠로 확대합니다. 다시 더블클릭하면 끝납니다." : "이미지 위치를 저장했습니다.");
 }
 function bindImage(pv) {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  pv.addEventListener("dblclick", e => { if (e.target === mainImg()) { e.preventDefault(); setMoving(!moving); } });
-  pv.addEventListener("pointerdown", e => { if (moving && e.target === mainImg()) { e.preventDefault(); grab = { x: e.clientX, y: e.clientY }; } });
+  pv.addEventListener("dblclick", e => { const k = keyOf(e.target); if (k) { e.preventDefault(); setMoving(moving === k ? null : k); } });
+  pv.addEventListener("pointerdown", e => { if (moving && e.target === imgOf(moving)) { e.preventDefault(); grab = { x: e.clientX, y: e.clientY }; } });
   addEventListener("pointermove", e => {
-    if (!grab) return;
-    const r = mainImg().getBoundingClientRect(), [px, py] = (data.mainImgPos || "50% 0%").split(" ").map(parseFloat);
-    data.mainImgPos = `${clamp(px - (e.clientX - grab.x) / r.width * 100, 0, 100).toFixed(1)}% ${clamp(py - (e.clientY - grab.y) / r.height * 100, 0, 100).toFixed(1)}%`;
-    grab = { x: e.clientX, y: e.clientY }; paintImg();
+    if (!grab || !moving) return;
+    const k = moving, im = imgOf(k); if (!im) return;
+    // 확대한 만큼 천천히 움직여야 손가락을 따라오는 느낌이 난다
+    const r = im.getBoundingClientRect(), [px, py] = (data[k + "Pos"] || (k === "mainImg" ? "50% 0%" : "50% 50%")).split(" ").map(parseFloat);
+    data[k + "Pos"] = `${clamp(px - (e.clientX - grab.x) / r.width * 100, 0, 100).toFixed(1)}% ${clamp(py - (e.clientY - grab.y) / r.height * 100, 0, 100).toFixed(1)}%`;
+    grab = { x: e.clientX, y: e.clientY }; paintImg(k);
   });
   addEventListener("pointerup", () => grab = null);
   pv.addEventListener("wheel", e => {
-    if (!moving || e.target !== mainImg()) return;
+    if (!moving || e.target !== imgOf(moving)) return;
     e.preventDefault();
-    data.mainImgZoom = +clamp((data.mainImgZoom || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
-    paintImg(); syncZoom();
+    const k = moving;
+    data[k + "Zoom"] = +clamp((data[k + "Zoom"] || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
+    paintImg(k); syncZoom(k);
   }, { passive: false });
   pv.addEventListener("dragstart", e => { if (moving) e.preventDefault(); });
   pv.addEventListener("load", applyFit, true);
   addEventListener("resize", applyFit);
-  addEventListener("keydown", e => { if (e.key === "Escape" && moving) setMoving(false); });
+  addEventListener("keydown", e => { if (e.key === "Escape" && moving) setMoving(null); });
 }
 function changed() {
   preview();
@@ -99,7 +105,7 @@ async function exportPng(btn) {
   node.querySelectorAll(".pf-trk.on .pf-vinyl").forEach(h => h.click());
   btn.disabled = true; btn.textContent = "만드는 중…";
   // 내보낼 때는 빈 칸 틀과 맞춤 배율을 끄고 실제 크기로 만든다
-  const wasFit = fit; fit = false; moving = false; preview(false);
+  const wasFit = fit; fit = false; moving = null; grab = null; preview(false);
   node = document.querySelector("#ed-pv .pf");
   try {
     const bg = getComputedStyle(node).getPropertyValue("--bg").trim();
