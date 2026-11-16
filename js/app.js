@@ -14,7 +14,7 @@ const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><pa
 // 태그 정렬: 숫자로 시작하는 것을 앞에(0 → 11 순), 나머지는 알파벳·가나다순
 const tagCmp = (a, b) => { const na = /^\d/.test(a), nb = /^\d/.test(b); return na !== nb ? (na ? -1 : 1) : a.localeCompare(b, "en", { numeric: true, sensitivity: "base" }); };
 const charTag = c => c.num || c.name || "";
-S.tags = []; // Trivia에서 고른 태그들 (모두 붙은 메모만 보인다)
+S.tags = []; // Trivia에서 고른 태그들 (하나라도 붙은 메모가 보인다)
 S.q = ""; S.memoP = 0; // Trivia 검색어와 현재 쪽(0부터)
 const MEMO_PER = 15;
 const facChars = () => S.chars.filter(c => c.faction === S.fac);
@@ -119,7 +119,7 @@ const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data
     <p>${ed("memo:" + m.id)}</p></div></article>`;
 function memoList() {
   const q = (S.q || "").trim().toLowerCase();
-  const list = S.memos.filter(m => S.tags.every(t => memoTags(m).includes(t)) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
+  const list = S.memos.filter(m => (!S.tags.length || S.tags.some(t => memoTags(m).includes(t))) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
   // 한 쪽에 15개씩. 쪽이 많으면 처음·끝과 현재 쪽 주변만 번호를 보여 준다.
   const pages = Math.max(1, Math.ceil(list.length / MEMO_PER)), p = S.memoP = Math.min(Math.max(0, S.memoP), pages - 1);
   const nums = [...Array(pages).keys()].filter(i => pages <= 9 || i === 0 || i === pages - 1 || Math.abs(i - p) <= 2);
@@ -156,7 +156,7 @@ function fileHtml(c) {
   } else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
-  } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos`, spos: `char|${c.id}|sideImgPos` });
+  } else body = renderProfile(c, { pos: `char|${c.id}|mainImgPos`, spos: `char|${c.id}|sideImg` });
   return `<div class="file"><div class="tabs">${has ? tab("profile", esc(c.num || c.name || "PROFILE")) : ""}${tab("assets", "ASSET")}${tab("memo", "MEMO")}<span class="sp"></span>${ed("char:" + c.id, "캐릭터 편집")}</div><div class="file-b">${body}</div></div>`;
 }
 function drawFile(scroll) {
@@ -482,7 +482,7 @@ function applyAdj() {
   else t.style.backgroundPosition = `${x}% ${y}%`;
 }
 function startAdjust(box) {
-  const move = box.classList.contains("hero-logo");
+  const move = box.classList.contains("hero-logo") || box.classList.contains("pf-sfig");
   const t = box.querySelector(":scope > .pos-t") || box, cs = getComputedStyle(t);
   const cur = move ? [parseFloat(t.style.left), parseFloat(t.style.top)]
     : (t.tagName === "IMG" ? cs.objectPosition : cs.backgroundPosition).split(" ").map(parseFloat);
@@ -500,7 +500,7 @@ async function endAdjust(save) {
     const [kind, p1, p2] = a.path.split("|");
     const src = kind === "site" ? S.site : kind === "fac" ? S.factions[p1] : S.chars.find(c => c.id === p1);
     const v = structuredClone(src), key = kind === "site" ? p1 : p2;
-    if (a.move) { v.logoX = +a.x.toFixed(1); v.logoY = +a.y.toFixed(1); v.logoW = +a.w.toFixed(1); }
+    if (a.move) { v[key + "X"] = +a.x.toFixed(1); v[key + "Y"] = +a.y.toFixed(1); v[key + "W"] = +a.w.toFixed(1); }
     else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`; }
     try { await (kind === "site" ? saveSite(v) : kind === "fac" ? saveFaction(p1, v) : saveChar(v)); toast("위치를 저장했습니다"); }
     catch (e) { console.error(e); toast("저장하지 못했습니다. " + why(e)); }
@@ -534,7 +534,7 @@ document.addEventListener("click", e => {
 }, true);
 addEventListener("wheel", e => {
   if (!adj?.move) return;
-  e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, 100); applyAdj();
+  e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, adj.box.classList.contains("pf-sfig") ? 200 : 100); applyAdj();
 }, { passive: false });
 
 // ---------- 지도 지점: 로그인 상태에서 지점을 끌면 위치가 바뀌고, 놓으면 저장된다 ----------

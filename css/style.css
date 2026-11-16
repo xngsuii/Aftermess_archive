@@ -544,3 +544,10 @@ textarea.tall{min-height:340px}
 /* v23: 알약 버튼 높이·글자 위치 통일 */
 .pill{display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 12px;line-height:1;vertical-align:middle}
 .pill.all{border-style:solid}
+
+/* v24: 편집기에서 전신 이미지 옮기는 중 */
+.ed-pv .pf-sidebox:has(img.mv)::after,.ed-pv .pf-sidebox:has(img.mv)::before{display:none}
+.ed-pv .pf-sfig:has(img.mv){outline:2px dashed var(--accent);outline-offset:-2px}
+.ed-pv img.mv{outline:0}
+.ed-pv .pf-main img.mv{outline:2px dashed var(--accent);outline-offset:-2px}
+.pf-sfig.adj-on{outline:2px dashed var(--accent);outline-offset:-2px;cursor:move}

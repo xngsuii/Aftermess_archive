@@ -124,3 +124,23 @@
 .pf-dl div{align-items:baseline}
 .pf-dl dt{line-height:1.4}
 .pf-dl dd{line-height:1.4}
+
+/* v9: 새 반짝이 기호, 페이드 조절, 전신 이미지는 Profile~Record 뒤에 깔린다 */
+.pf-star{width:17px;height:44px;fill:var(--accent);transform:none;flex:none}
+.pf-main::after{height:var(--fw,62%);background:linear-gradient(to top,color-mix(in srgb,var(--bg) calc(var(--fa,1)*100%),transparent) 6%,transparent)}
+.pf-cols.has-side{position:relative;min-height:600px}
+.pf-cols.has-side>div:first-child{position:relative;z-index:1}
+.pf-cols.has-side .pf-side{position:static;display:block}
+.pf-cols.has-side .pf-sidebox{position:absolute;top:0;right:0;bottom:0;width:62%;overflow:hidden;z-index:0}
+.pf-cols.has-side .pf-sidebox::after{content:"";position:absolute;inset:0 auto 0 0;z-index:1;width:var(--fw,55%);background:linear-gradient(to right,color-mix(in srgb,var(--bg) calc(var(--fa,.9)*100%),transparent),transparent);pointer-events:none}
+.pf-cols.has-side .pf-sidebox::before{content:"";position:absolute;inset:auto 0 0 0;z-index:1;height:14%;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+.pf-sfig{position:absolute}
+.pf-sfig>img{width:100%;height:auto;display:block}
+.pf-sfig .pf-chip{position:absolute;z-index:2;white-space:nowrap}
+.pf-sfig .c1{top:22%;right:6%}.pf-sfig .c2{top:53%;left:20%}.pf-sfig .c3{top:76%;right:8%}
+.pf-sfig.pf-ph{height:380px}
+.pf-sidebox.pf-ph::after{display:block}
+@media(max-width:640px){
+  .pf-cols.has-side{min-height:0}
+  .pf-cols.has-side .pf-sidebox{position:relative;width:100%;height:120vw}
+}

@@ -167,7 +167,7 @@ export function buildFields(schema, obj, ctx = {}) {
     } else if (f.type === "range") {
       const row = h("div", "rng"), i = h("input"), out = h("span");
       i.type = "range"; i.min = f.min; i.max = f.max; i.step = f.step; i.dataset.k = f.k;
-      const show = () => out.textContent = Math.round(i.value * 100) + "%";
+      const show = () => out.textContent = Math.round(i.value * (f.mul ?? 100)) + "%";
       i.value = obj[f.k] ?? f.def; show();
       i.oninput = () => { obj[f.k] = +i.value; show(); ch(); };
       row.append(i, out); w.append(row);

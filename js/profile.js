@@ -11,12 +11,16 @@ export const PROFILE_FIELDS = [
   { k: "topRight", label: "상단 맨 오른쪽 글 (두 줄까지)", type: "area", plain: true, ph: "Operational Detachment\nMILGRAM" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
   { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 위치를 옮길 수 있습니다." },
+  { k: "mainFadeH", label: "상단 이미지 아래 페이드 범위", type: "range", min: 0, max: 100, step: 1, def: 62, mul: 1 },
+  { k: "mainFade", label: "상단 이미지 아래 페이드 강도", type: "range", min: 0, max: 1, step: 0.01, def: 1 },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
   { k: "profile", label: "프로필 본문", type: "area" },
   { k: "sideImg", label: "옆 전신 이미지", type: "img" },
-  { k: "sideImgZoom", label: "전신 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 위치를 옮길 수 있습니다." },
+  { k: "sideImgW", label: "전신 이미지 크기", type: "range", min: 20, max: 200, step: 0.5, def: 64.5, mul: 1, hint: "Profile부터 Record까지가 이미지 자리입니다. 미리보기에서 이미지를 더블클릭하면 끌어서 옮기고 휠로 크기를 바꿀 수 있습니다." },
+  { k: "sideFadeW", label: "전신 이미지 왼쪽 페이드 범위", type: "range", min: 0, max: 100, step: 1, def: 55, mul: 1 },
+  { k: "sideFade", label: "전신 이미지 왼쪽 페이드 강도", type: "range", min: 0, max: 1, step: 0.01, def: 0.9 },
   { k: "height", label: "키", ph: "189cm" },
   { k: "nation", label: "국적", ph: "홍콩인" },
   { k: "age", label: "나이", ph: "32" },
@@ -54,6 +58,12 @@ export const imgStyle = (c, key = "mainImg") => {
   return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:scale(${z})`;
 };
 export const mainImgStyle = c => imgStyle(c, "mainImg");
+// 전신 이미지: Profile~Record 영역 안에서의 왼쪽·위 위치와 너비(영역 대비 %). 처음에는 오른쪽 위.
+const num = (v, d) => v === undefined || v === null || v === "" || isNaN(+v) ? d : +v;
+export const sideFigStyle = c => `left:${num(c.sideImgX, 100 - num(c.sideImgW, 64.5))}%;top:${num(c.sideImgY, 0)}%;width:${num(c.sideImgW, 64.5)}%`;
+const fadeVars = (c, w, a, dw, da) => `--fw:${num(c[w], dw)}%;--fa:${num(c[a], da)}`;
+// 반짝이 기호 (위가 짧고 아래가 긴 십자 별)
+const STAR = `<svg class="pf-star" viewBox="0 0 24 64" aria-hidden="true"><path d="M12 0C12.6 10.5 14.2 15.4 21 17.5C14.2 19.4 12.7 27 12 64C11.3 27 9.8 19.4 3 17.5C9.8 15.4 11.4 10.5 12 0Z"/></svg>`;
 
 function secret(c, opt) {
   if (!c.useSecret) return "";
@@ -80,6 +90,10 @@ export function renderProfile(c, opt = {}) {
   const chip = (cls, l, v, dot) => (v = v || (F ? "—" : "")) ? `<span class="pf-chip ${cls}">${dot ? "<i></i>" : ""}${l}<b>${esc(v)}</b></span>` : "";
   const chips = chip("c1", "HEIGHT", c.height) + chip("c2", "NATION", c.nation, 1) + chip("c3", "AGE", c.age);
   const side = c.sideImg || chips;
+  // 전신 이미지(또는 편집기의 빈 틀)는 Profile~Record 영역 뒤에 깔린다
+  const big = !!(c.sideImg || F);
+  const fig = c.sideImg ? `<div class="pf-sfig" ${opt.spos ? `data-pos="${opt.spos}"` : ""} style="${sideFigStyle(c)}"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>`
+    : `<div class="pf-sfig pf-ph" style="${sideFigStyle(c)}">SIDE IMAGE${chips}</div>`;
   const noTrk = F && !tracks.length ? `<div class="pf-trk pf-phx"><div class="pf-trk-h"><span class="pf-vinyl"></span><span class="pf-trk-m"><span class="pf-trk-t"><small>가사 한 줄</small><b>TITLE</b><em>♪ 곡명<br>— 아티스트</em></span></span></div></div>` : "";
   const trk = t => {
     const id = ytId(t.yt), body = fmt(t.body);
@@ -92,20 +106,20 @@ export function renderProfile(c, opt = {}) {
   const left = sec("Profile", "프로필", fmt(c.profile), ph("프로필 본문"))
     + sec("Affiliation", "소속 및 계급", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v) || (F ? "—" : "")}</dd></div>`).join("")}</dl>` : "", ph("소속 및 계급"))
     + sec("Record", "이력 · ETC", fmt(c.record), ph("이력 · 기타"));
-  const main = c.mainImg ? `<div class="pf-main"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} style="${mainImgStyle(c)}" alt=""></div>`
+  const main = c.mainImg ? `<div class="pf-main" style="${fadeVars(c, "mainFadeH", "mainFade", 62, 1)}"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} style="${mainImgStyle(c)}" alt=""></div>`
     : F ? `<div class="pf-main pf-ph">MAIN IMAGE</div>` : "";
   return `<div class="pf">
     <div class="pf-top"><span>AFTERMESS<br>PERSONNEL FILE</span><span class="mid">FLD // 20_∞</span><span>${c.clearance || F ? "Clearance =<br>" + (esc(c.clearance) || "—") : ""}</span>
       <span>${String(c.topRight || "").split("\n").map(l => esc(l.replace(/↵\s*$/, "").trim())).filter(Boolean).slice(0, 2).join("<br>")}</span></div>
-    <div class="pf-sub ${c.mainImg ? "over" : ""}"><span><b>↘</b>SUBJECT FILE<br><i>SUBJECT FILE</i></span><i class="pf-star">✦</i></div>
+    <div class="pf-sub ${c.mainImg ? "over" : ""}"><span><b>↘</b>SUBJECT FILE<br><i>SUBJECT FILE</i></span>${STAR}</div>
     <div class="pf-hero">${main}
       <div class="pf-id">${c.serial ? `<small>serial no. ${esc(c.serial)}</small>` : ""}
         <h1${F && !(c.num || c.name) ? ' class="pf-phx"' : ""}>${esc(c.num || c.name || (F ? "CODENAME" : "—"))}</h1>
         <i class="pf-rule"></i>${c.tagline ? `<strong class="pf-tag">${inl(c.tagline)}</strong>` : F ? `<strong class="pf-tag pf-phx">한 줄 소개</strong>` : ""}${fmt(c.intro) || ph("소개글")}
       </div>
     </div>
-    <div class="pf-cols"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
-      ${side ? `<aside class="pf-side">${c.sideImg ? `<div class="pf-sidebox"><img ${imgAttr(c.sideImg)} ${opt.spos ? `data-pos="${opt.spos}"` : ""} style="${imgStyle(c, "sideImg")}" alt="">${chips}</div>` : F ? `<div class="pf-sidebox pf-ph">SIDE IMAGE${chips}</div>` : chips}</aside>` : ""}
+    <div class="pf-cols${big ? " has-side" : ""}"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
+      ${side ? `<aside class="pf-side">${big ? `<div class="pf-sidebox" style="${fadeVars(c, "sideFadeW", "sideFade", 55, 0.9)}">${fig}</div>` : chips}</aside>` : ""}
     </div>
     ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""), noTrk)}
     ${secret(c, opt)}

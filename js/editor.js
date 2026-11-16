@@ -1,6 +1,6 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, imgStyle } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
 const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
@@ -27,7 +27,7 @@ function preview(frame = true) {
   if (moving) imgOf(moving)?.classList.add("mv");
   applyFit();
 }
-const IMG_SEL = { mainImg: "#ed-pv .pf-main img", sideImg: "#ed-pv .pf-sidebox img" };
+const IMG_SEL = { mainImg: "#ed-pv .pf-main img", sideImg: "#ed-pv .pf-sfig img" };
 const imgOf = k => document.querySelector(IMG_SEL[k]);
 const keyOf = el => Object.keys(IMG_SEL).find(k => imgOf(k) === el);
 // 맞춤 보기: 미리보기 전체가 한 화면에 들어오도록 줄인다
@@ -38,10 +38,16 @@ function applyFit() {
 }
 // 상단·전신 이미지: 더블클릭하면 끌어서 옮기고 휠로 확대한다
 function syncZoom(k) {
-  const r = document.querySelector(`#ed-form input[data-k="${k}Zoom"]`);
-  if (r) { r.value = data[k + "Zoom"] || 1; r.nextSibling.textContent = Math.round(r.value * 100) + "%"; }
+  const side = k === "sideImg", r = document.querySelector(`#ed-form input[data-k="${side ? "sideImgW" : k + "Zoom"}"]`);
+  if (r) { r.value = side ? data.sideImgW : data[k + "Zoom"] || 1; r.nextSibling.textContent = Math.round(r.value * (side ? 1 : 100)) + "%"; }
 }
-function paintImg(k) { const im = imgOf(k); if (im) im.style.cssText = imgStyle(data, k); clearTimeout(timer); timer = setTimeout(save, 500); }
+function paintImg(k) {
+  const im = imgOf(k);
+  if (im) { if (k === "sideImg") im.parentElement.style.cssText = sideFigStyle(data); else im.style.cssText = imgStyle(data, k); }
+  clearTimeout(timer); timer = setTimeout(save, 500);
+}
+// 전신 이미지의 현재 위치·너비 (저장된 값이 없으면 화면에 그려진 값)
+const sideBox = () => { const f = imgOf("sideImg").parentElement; return { x: parseFloat(f.style.left), y: parseFloat(f.style.top), w: parseFloat(f.style.width) }; };
 function setMoving(k) {
   document.querySelectorAll("#ed-pv img.mv").forEach(x => x.classList.remove("mv"));
   moving = k; grab = null;
@@ -55,6 +61,13 @@ function bindImage(pv) {
   addEventListener("pointermove", e => {
     if (!grab || !moving) return;
     const k = moving, im = imgOf(k); if (!im) return;
+    if (k === "sideImg") {
+      const reg = im.parentElement.parentElement.getBoundingClientRect(), b = sideBox();
+      data.sideImgX = +clamp(b.x + (e.clientX - grab.x) / reg.width * 100, -150, 150).toFixed(1);
+      data.sideImgY = +clamp(b.y + (e.clientY - grab.y) / reg.height * 100, -150, 150).toFixed(1);
+      data.sideImgW = b.w;
+      grab = { x: e.clientX, y: e.clientY }; paintImg(k); return;
+    }
     // 확대한 만큼 천천히 움직여야 손가락을 따라오는 느낌이 난다
     const r = im.getBoundingClientRect(), [px, py] = (data[k + "Pos"] || (k === "mainImg" ? "50% 0%" : "50% 50%")).split(" ").map(parseFloat);
     data[k + "Pos"] = `${clamp(px - (e.clientX - grab.x) / r.width * 100, 0, 100).toFixed(1)}% ${clamp(py - (e.clientY - grab.y) / r.height * 100, 0, 100).toFixed(1)}%`;
@@ -65,7 +78,8 @@ function bindImage(pv) {
     if (!moving || e.target !== imgOf(moving)) return;
     e.preventDefault();
     const k = moving;
-    data[k + "Zoom"] = +clamp((data[k + "Zoom"] || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
+    if (k === "sideImg") { const b = sideBox(); data.sideImgX = b.x; data.sideImgY = b.y; data.sideImgW = +clamp(b.w * (1 - e.deltaY * 0.001), 20, 200).toFixed(1); }
+    else data[k + "Zoom"] = +clamp((data[k + "Zoom"] || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
     paintImg(k); syncZoom(k);
   }, { passive: false });
   pv.addEventListener("dragstart", e => { if (moving) e.preventDefault(); });
