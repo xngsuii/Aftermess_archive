@@ -164,13 +164,30 @@ export function buildFields(schema, obj, ctx = {}) {
         box.append(add);
       };
       draw(); w.append(box);
-    } else if (f.type === "range") {
-      const row = h("div", "rng"), i = h("input"), out = h("span");
-      i.type = "range"; i.min = f.min; i.max = f.max; i.step = f.step; i.dataset.k = f.k;
-      const show = () => out.textContent = Math.round(i.value * (f.mul ?? 100)) + "%";
-      i.value = obj[f.k] ?? f.def; show();
-      i.oninput = () => { obj[f.k] = +i.value; show(); ch(); };
-      row.append(i, out); w.append(row);
+    } else if (f.type === "range" || f.type === "ranges") {
+      // ranges: 제목 하나 아래에 [작은 이름 | 슬라이더 | 값] 줄을 여러 개
+      w.classList.add("fld-rng");
+      (f.type === "range" ? [{ ...f, label: "" }] : f.items).forEach(r => {
+        const row = h("div", "rng"), i = h("input"), out = h("span");
+        if (r.label) row.append(h("em", "", r.label));
+        i.type = "range"; i.min = r.min; i.max = r.max; i.step = r.step; i.dataset.k = r.k; i.dataset.def = r.def; i.dataset.mul = r.mul ?? 100;
+        const fill = () => i.style.setProperty("--v", ((i.value - r.min) / (r.max - r.min) * 100) + "%");
+        const show = () => { out.textContent = Math.round(i.value * (r.mul ?? 100)) + "%"; fill(); };
+        i.value = obj[r.k] ?? r.def; show(); i.show = show;
+        i.oninput = () => { obj[r.k] = +i.value; show(); ch(); };
+        row.append(i, out); w.append(row);
+      });
+    } else if (f.type === "reset") {
+      // 정해 둔 칸들을 처음 값으로 되돌린다 (슬라이더도 같이)
+      lab.remove();
+      const b = h("button", "btn", f.label); b.type = "button";
+      b.onclick = () => {
+        f.keys.forEach(k => delete obj[k]);
+        const root = w.closest("#ed-form, .mbox") || document;
+        f.keys.forEach(k => root.querySelectorAll(`input[data-k="${k}"]`).forEach(i => { i.value = i.dataset.def; i.show?.(); }));
+        ch();
+      };
+      w.append(b);
     } else if (f.type === "imgs") {
       // 사진 여러 장: 고르면 바로 올라가고, ✕로 빼고, ◀ ▶로 순서를 바꾼다
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];

@@ -490,7 +490,7 @@ function startAdjust(box) {
   document.body.classList.add("adjusting"); box.classList.add("adj-on");
   box.closest(".pcard")?.classList.toggle("flip", box.classList.contains("pc-b"));
   getSelection()?.removeAllRanges();
-  adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : "드래그해서 이미지 위치 조정"}</span><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
+  adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : "드래그해서 이미지 위치 조정"}</span><button data-adj="reset">원래대로</button><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
   adjBar.classList.add("on");
 }
 async function endAdjust(save) {
@@ -530,7 +530,13 @@ document.addEventListener("click", e => {
   if (!adj) return;
   e.stopImmediatePropagation(); e.preventDefault();
   const b = e.target.closest("[data-adj]");
-  if (b) endAdjust(b.dataset.adj === "save");
+  if (!b) return;
+  if (b.dataset.adj !== "reset") return endAdjust(b.dataset.adj === "save");
+  // 원래대로: 처음 자리로 돌려 놓는다 (저장을 눌러야 반영)
+  const k = adj.path.split("|").pop();
+  if (adj.move) Object.assign(adj, k === "logo" ? { x: 50, y: 60, w: 60 } : { x: 35.5, y: 0, w: 64.5 });
+  else Object.assign(adj, k === "mainImgPos" ? { x: 50, y: 0 } : { x: 50, y: 50 });
+  applyAdj();
 }, true);
 addEventListener("wheel", e => {
   if (!adj?.move) return;

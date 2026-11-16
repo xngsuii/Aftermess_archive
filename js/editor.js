@@ -39,7 +39,7 @@ function applyFit() {
 // 상단·전신 이미지: 더블클릭하면 끌어서 옮기고 휠로 확대한다
 function syncZoom(k) {
   const side = k === "sideImg", r = document.querySelector(`#ed-form input[data-k="${side ? "sideImgW" : k + "Zoom"}"]`);
-  if (r) { r.value = side ? data.sideImgW : data[k + "Zoom"] || 1; r.nextSibling.textContent = Math.round(r.value * (side ? 1 : 100)) + "%"; }
+  if (r) { r.value = side ? data.sideImgW : data[k + "Zoom"] || 1; r.show ? r.show() : (r.nextSibling.textContent = Math.round(r.value * (side ? 1 : 100)) + "%"); }
 }
 function paintImg(k) {
   const im = imgOf(k);

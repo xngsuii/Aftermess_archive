@@ -10,17 +10,24 @@ export const PROFILE_FIELDS = [
   { k: "clearance", label: "보안 등급 (상단 세 번째, Clearance = 아래)", ph: "Seven" },
   { k: "topRight", label: "상단 맨 오른쪽 글 (두 줄까지)", type: "area", plain: true, ph: "Operational Detachment\nMILGRAM" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
-  { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 위치를 옮길 수 있습니다." },
-  { k: "mainFadeH", label: "상단 이미지 아래 페이드 범위", type: "range", min: 0, max: 100, step: 1, def: 62, mul: 1 },
-  { k: "mainFade", label: "상단 이미지 아래 페이드 강도", type: "range", min: 0, max: 1, step: 0.01, def: 1 },
+  { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 옮기고 휠로 확대할 수 있습니다." },
+  { type: "ranges", label: "상단 이미지 · 하단 페이드", items: [
+    { k: "mainFadeH", label: "범위", min: 0, max: 100, step: 1, def: 62, mul: 1 },
+    { k: "mainFade", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
+  { type: "reset", label: "상단 이미지 위치·확대 되돌리기", keys: ["mainImgPos", "mainImgZoom"] },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
   { k: "profile", label: "프로필 본문", type: "area" },
   { k: "sideImg", label: "옆 전신 이미지", type: "img" },
   { k: "sideImgW", label: "전신 이미지 크기", type: "range", min: 20, max: 200, step: 0.5, def: 64.5, mul: 1, hint: "Profile부터 Record까지가 이미지 자리입니다. 미리보기에서 이미지를 더블클릭하면 끌어서 옮기고 휠로 크기를 바꿀 수 있습니다." },
-  { k: "sideFadeW", label: "전신 이미지 왼쪽 페이드 범위", type: "range", min: 0, max: 100, step: 1, def: 55, mul: 1 },
-  { k: "sideFade", label: "전신 이미지 왼쪽 페이드 강도", type: "range", min: 0, max: 1, step: 0.01, def: 0.9 },
+  { type: "ranges", label: "전신 이미지 · 왼쪽 페이드", items: [
+    { k: "sideFadeW", label: "범위", min: 0, max: 100, step: 1, def: 55, mul: 1 },
+    { k: "sideFade", label: "강도", min: 0, max: 1, step: 0.01, def: 0.9 }] },
+  { type: "ranges", label: "전신 이미지 · 하단 페이드", items: [
+    { k: "sideFadeBH", label: "범위", min: 0, max: 60, step: 1, def: 14, mul: 1 },
+    { k: "sideFadeB", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
+  { type: "reset", label: "전신 이미지 위치·크기 되돌리기", keys: ["sideImgX", "sideImgY", "sideImgW"] },
   { k: "height", label: "키", ph: "189cm" },
   { k: "nation", label: "국적", ph: "홍콩인" },
   { k: "age", label: "나이", ph: "32" },
@@ -62,6 +69,9 @@ export const mainImgStyle = c => imgStyle(c, "mainImg");
 const num = (v, d) => v === undefined || v === null || v === "" || isNaN(+v) ? d : +v;
 export const sideFigStyle = c => `left:${num(c.sideImgX, 100 - num(c.sideImgW, 64.5))}%;top:${num(c.sideImgY, 0)}%;width:${num(c.sideImgW, 64.5)}%`;
 const fadeVars = (c, w, a, dw, da) => `--fw:${num(c[w], dw)}%;--fa:${num(c[a], da)}`;
+const sideVars = c => `${fadeVars(c, "sideFadeW", "sideFade", 55, 0.9)};--bh:${num(c.sideFadeBH, 14)}%;--ba:${num(c.sideFadeB, 1)}`;
+// HEIGHT·NATION·AGE는 이미지를 옮겨도 처음 자리에 남는다: 처음 크기·위치의 보이지 않는 틀에 붙인다
+const anchorStyle = "left:35.5%;top:0%;width:64.5%";
 // 반짝이 기호 (위가 짧고 아래가 긴 십자 별)
 const STAR = `<svg class="pf-star" viewBox="0 0 24 64" aria-hidden="true"><path d="M12 0C12.6 10.5 14.2 15.4 21 17.5C14.2 19.4 12.7 27 12 64C11.3 27 9.8 19.4 3 17.5C9.8 15.4 11.4 10.5 12 0Z"/></svg>`;
 
@@ -92,8 +102,9 @@ export function renderProfile(c, opt = {}) {
   const side = c.sideImg || chips;
   // 전신 이미지(또는 편집기의 빈 틀)는 Profile~Record 영역 뒤에 깔린다
   const big = !!(c.sideImg || F);
-  const fig = c.sideImg ? `<div class="pf-sfig" ${opt.spos ? `data-pos="${opt.spos}"` : ""} style="${sideFigStyle(c)}"><img ${imgAttr(c.sideImg)} alt="">${chips}</div>`
-    : `<div class="pf-sfig pf-ph" style="${sideFigStyle(c)}">SIDE IMAGE${chips}</div>`;
+  const fig = c.sideImg ? `<div class="pf-sfig" ${opt.spos ? `data-pos="${opt.spos}"` : ""} style="${sideFigStyle(c)}"><img ${imgAttr(c.sideImg)} alt=""></div>
+      <div class="pf-sanchor" style="${anchorStyle}"><img ${imgAttr(c.sideImg)} alt="" aria-hidden="true">${chips}</div>`
+    : `<div class="pf-sfig pf-ph" style="${sideFigStyle(c)}">SIDE IMAGE</div><div class="pf-sanchor pf-ph-a" style="${anchorStyle}">${chips}</div>`;
   const noTrk = F && !tracks.length ? `<div class="pf-trk pf-phx"><div class="pf-trk-h"><span class="pf-vinyl"></span><span class="pf-trk-m"><span class="pf-trk-t"><small>가사 한 줄</small><b>TITLE</b><em>♪ 곡명<br>— 아티스트</em></span></span></div></div>` : "";
   const trk = t => {
     const id = ytId(t.yt), body = fmt(t.body);
@@ -119,7 +130,7 @@ export function renderProfile(c, opt = {}) {
       </div>
     </div>
     <div class="pf-cols${big ? " has-side" : ""}"${side ? "" : ' style="grid-template-columns:1fr"'}><div>${left}</div>
-      ${side ? `<aside class="pf-side">${big ? `<div class="pf-sidebox" style="${fadeVars(c, "sideFadeW", "sideFade", 55, 0.9)}">${fig}</div>` : chips}</aside>` : ""}
+      ${side ? `<aside class="pf-side">${big ? `<div class="pf-sidebox" style="${sideVars(c)}">${fig}</div>` : chips}</aside>` : ""}
     </div>
     ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""), noTrk)}
     ${secret(c, opt)}
