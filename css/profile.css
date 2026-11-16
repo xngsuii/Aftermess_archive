@@ -118,3 +118,9 @@
 /* v7: 전신 이미지 확대 범위 고정, 위에 얹는 칩은 반투명 */
 .pf-sidebox{overflow:hidden}
 .pf-sidebox .pf-chip{background:color-mix(in srgb,var(--bg3) 52%,transparent);border-color:color-mix(in srgb,var(--fg) 14%,transparent);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+
+/* v8: 소속 및 계급 — 위 선 없음, 항목과 내용 줄 맞춤 */
+.pf-dl{border-top:0}
+.pf-dl div{align-items:baseline}
+.pf-dl dt{line-height:1.4}
+.pf-dl dd{line-height:1.4}

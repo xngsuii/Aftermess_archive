@@ -174,7 +174,7 @@ export function buildFields(schema, obj, ctx = {}) {
     } else if (f.type === "imgs") {
       // 사진 여러 장: 고르면 바로 올라가고, ✕로 빼고, ◀ ▶로 순서를 바꾼다
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];
-      const box = h("div", "imgs"), add = h("label", "btn"), inp = h("input"), txt = h("span", "", "+ 사진 추가 (여러 장 선택 가능)");
+      const box = h("div", "imgs"), add = h("label", "btn"), inp = h("input"), txt = h("span", "", "+ 사진 추가");
       inp.type = "file"; inp.accept = "image/*"; inp.multiple = true; inp.hidden = true; add.style.cursor = "pointer"; add.append(txt, inp);
       const draw = () => {
         box.innerHTML = "";
@@ -197,7 +197,7 @@ export function buildFields(schema, obj, ctx = {}) {
             obj[f.k].push({ img: await saveImage(files[i], { thumb: true }) }); draw();
           }
         } catch (e) { console.error(e); toast("일부 사진을 올리지 못했습니다. " + why(e)); }
-        txt.textContent = "+ 사진 추가 (여러 장 선택 가능)"; ch();
+        txt.textContent = "+ 사진 추가"; ch();
       };
       draw(); w.append(box, add);
     } else if (f.type === "img" || f.type === "inline") {
@@ -248,7 +248,7 @@ export function buildFields(schema, obj, ctx = {}) {
             box.append(b);
           };
           toggle("", "전원 선택", opts.map(o => o[0]));
-          (f.groups || []).forEach(([g, label]) => toggle("grp", label, opts.filter(o => o[2] === g).map(o => o[0])));
+          (f.groups || []).forEach(([g, label]) => toggle("pfac", label, opts.filter(o => o[2] === g).map(o => o[0])));
           box.append(h("i", "pills-br"));
         }
         opts.forEach(([v, l]) => {

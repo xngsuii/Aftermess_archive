@@ -534,9 +534,13 @@ textarea.tall{min-height:340px}
 /* v22: 진영별 전원 선택 줄, 이미지 옮기기 표시, 사진 끌어다 놓기 */
 .pills-br{flex-basis:100%;height:0}
 .pill.all.on{border-style:solid;border-color:var(--fg2);background:var(--bg3);color:var(--fg)}
-.pill.all.grp{border-style:solid}
+.pill.all.pfac{border-style:solid}
 .ed-pv .pf-main img,.ed-pv .pf-sidebox img{cursor:zoom-in}
 .ed-pv img.mv{cursor:move;outline:2px dashed var(--accent);outline-offset:-2px}
 .ed-pv .pf-main:has(img.mv)::after,.ed-pv .pf-sidebox:has(img.mv)::after{display:none}
 .file-pad.drop-on{outline:2px dashed var(--accent);outline-offset:6px}
 .file-pad .agrid.drop-on{outline:1px dashed var(--fg2);outline-offset:4px}
+
+/* v23: 알약 버튼 높이·글자 위치 통일 */
+.pill{display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 12px;line-height:1;vertical-align:middle}
+.pill.all{border-style:solid}

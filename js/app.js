@@ -11,6 +11,10 @@ S.fold = { people: false, chron: false };
 S.view = null; // null: 메인 화면만. "world" | "faction" | "trivia": 메인 아래에 그 화면 하나만 붙는다
 const ed = (what, label = "편집") => `<button class="ed" data-a="edit:${what}">${label}</button>`;
 const SIL = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><path d="M50 14c-13 0-21 10-21 24 0 9 3 17 8 22-2 4-6 6-14 9C10 74 4 84 2 100h96c-2-16-8-26-21-31-8-3-12-5-14-9 5-5 8-13 8-22 0-14-8-24-21-24z"/></svg>`;
+// 태그 정렬: 숫자로 시작하는 것을 앞에(0 → 11 순), 나머지는 알파벳·가나다순
+const tagCmp = (a, b) => { const na = /^\d/.test(a), nb = /^\d/.test(b); return na !== nb ? (na ? -1 : 1) : a.localeCompare(b, "en", { numeric: true, sensitivity: "base" }); };
+const charTag = c => c.num || c.name || "";
+S.tags = []; // Trivia에서 고른 태그들 (모두 붙은 메모만 보인다)
 S.q = ""; S.memoP = 0; // Trivia 검색어와 현재 쪽(0부터)
 const MEMO_PER = 15;
 const facChars = () => S.chars.filter(c => c.faction === S.fac);
@@ -104,7 +108,8 @@ function people() {
     <div class="${S.fold.people ? "shut" : ""}" data-fold="people">${body}
     <div id="file"></div></div></section>`;
 }
-const memoTags = m => [...new Set([...(m.charIds || []).map(id => { const c = S.chars.find(x => x.id === id); return c ? (c.num || c.name) : null; }), ...(m.tags || [])].filter(Boolean))];
+const memoTags = m => [...new Set([...(m.charIds || []).map(id => S.chars.find(x => x.id === id)).filter(Boolean)
+  .sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction) || tagCmp(charTag(a), charTag(b))).map(charTag), ...(m.tags || [])].filter(Boolean))];
 const memoDate = m => m.at ? new Date(m.at).toLocaleDateString("sv").replaceAll("-", ".") : "";
 const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data-a="tog"><h4>${esc(m.title || String(m.body || "").slice(0, 40) || "제목 없음")}</h4>
     <time>${memoDate(m)}</time><span class="plus">+</span></button>
@@ -114,7 +119,7 @@ const memoHtml = m => `<article class="memo tg"><button class="memo-h tg-h" data
     <p>${ed("memo:" + m.id)}</p></div></article>`;
 function memoList() {
   const q = (S.q || "").trim().toLowerCase();
-  const list = S.memos.filter(m => (!S.tag || memoTags(m).includes(S.tag)) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
+  const list = S.memos.filter(m => S.tags.every(t => memoTags(m).includes(t)) && (!q || ((m.title || "") + " " + (m.body || "")).toLowerCase().includes(q)));
   // 한 쪽에 15개씩. 쪽이 많으면 처음·끝과 현재 쪽 주변만 번호를 보여 준다.
   const pages = Math.max(1, Math.ceil(list.length / MEMO_PER)), p = S.memoP = Math.min(Math.max(0, S.memoP), pages - 1);
   const nums = [...Array(pages).keys()].filter(i => pages <= 9 || i === 0 || i === pages - 1 || Math.abs(i - p) <= 2);
@@ -123,12 +128,15 @@ function memoList() {
 }
 function drawMemos() { const box = document.getElementById("memos"); box.innerHTML = memoList(); hydrate(box); }
 function trivia() {
-  const tags = [...new Set(S.memos.flatMap(memoTags))];
-  if (S.tag && !tags.includes(S.tag)) S.tag = "";
+  // 캐릭터 태그는 진영 순서대로(진영 안에서는 숫자 → 알파벳), 그 뒤에 일반 태그
+  const used = new Set(S.memos.flatMap(memoTags));
+  const chars = FAC.flatMap(k => S.chars.filter(c => c.faction === k).map(charTag).filter(t => used.has(t)).sort(tagCmp));
+  const tags = [...new Set([...chars, ...[...used].filter(t => !chars.includes(t)).sort(tagCmp)])];
+  S.tags = S.tags.filter(t => used.has(t));
   return `<section id="trivia" class="sec wrap">
     <div class="sec-h"><div><h2>Trivia</h2><small>작가 메모 · ${S.memos.length} · 제목을 누르면 펼쳐집니다</small></div><div class="r">${ed("newmemo", "+ 메모 추가")}</div></div>
     <input id="memo-q" class="memo-q" placeholder="제목 · 내용 검색" value="${esc(S.q)}">
-    <div class="chips"><button class="${S.tag ? "" : "on"}" data-a="tag:">전체</button>${tags.map(t => `<button class="${t === S.tag ? "on" : ""}" data-a="tag:${esc(t)}">#${esc(t)}</button>`).join("")}</div>
+    <div class="chips"><button class="${S.tags.length ? "" : "on"}" data-a="tag:">전체</button>${tags.map(t => `<button class="${S.tags.includes(t) ? "on" : ""}" data-a="tag:${esc(t)}">#${esc(t)}</button>`).join("")}</div>
     <div id="memos">${memoList()}</div>
     <footer class="end"><div class="barcode"></div><span>© AFTERMESS</span></footer></section>`;
 }
@@ -144,7 +152,7 @@ function fileHtml(c) {
       return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
     body = `<div class="file-pad">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
       ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가 (여러 장 선택 가능)")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
+      <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
   } else if (cur === "memo") {
     const ms = S.memos.filter(m => (m.charIds || []).includes(c.id));
     body = `<div class="file-pad">${ms.map(memoHtml).join("") || `<p class="empty">이 캐릭터의 메모가 없습니다. Trivia에서 메모에 이 캐릭터 태그를 붙이면 여기에 나옵니다.</p>`}</div>`;
@@ -190,11 +198,11 @@ const charSchema = () => {
 };
 const memoSchema = () => [T("title", "제목"), { k: "body", label: "내용", type: "area", rows: 18 },
   { k: "imgs", label: "이미지", type: "imgs" },
-  { type: "head", label: "태그 (눌러서 펼치기)" },
+  { type: "head", label: "태그" },
   { k: "charIds", label: "캐릭터 태그 (붙인 캐릭터의 MEMO 탭에도 들어갑니다)", type: "pills", all: true,
     groups: FAC.map(k => [k, S.factions[k]?.short || S.factions[k]?.name || k]),
-    options: [...S.chars].sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction)).map(c => [c.id, c.num || c.name || "이름 없음", c.faction]) },
-  { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || [])])].map(t => [t, t]) }];
+    options: [...S.chars].sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction) || tagCmp(charTag(a), charTag(b))).map(c => [c.id, charTag(c) || "이름 없음", c.faction]) },
+  { k: "tags", label: "태그", type: "pills", add: true, options: [...new Set(["세계관", ...S.memos.flatMap(m => m.tags || []).sort(tagCmp)])].map(t => [t, t]) }];
 function editMemo(m, isNew) {
   openForm({ title: isNew ? "메모 추가" : "메모 편집", schema: memoSchema(), data: m,
     onSave: async v => { await saveMemo(v); render(); },
@@ -292,9 +300,11 @@ const ACT = {
     drawFile();
   },
   tab(k) { S.tab = k; drawFile(); },
+  // 태그를 누르면 켜고 끈다. 여러 개를 켤 수 있고, "전체"는 모두 끈다.
   tag(t, el) {
-    S.tag = t; S.memoP = 0;
-    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    S.tags = !t ? [] : S.tags.includes(t) ? S.tags.filter(x => x !== t) : [...S.tags, t];
+    S.memoP = 0;
+    el.parentElement.querySelectorAll("button").forEach(b => { const v = b.dataset.a.slice(4); b.classList.toggle("on", v ? S.tags.includes(v) : !S.tags.length); });
     drawMemos();
   },
   page(n) { S.memoP = +n; drawMemos(); document.getElementById("trivia")?.scrollIntoView({ behavior: "instant", block: "start" }); },
