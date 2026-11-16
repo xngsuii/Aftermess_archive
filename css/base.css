@@ -15,6 +15,8 @@
 [data-faction="ww"]{--accent:var(--c-ww)}
 [data-faction="milgram"]{--accent:var(--c-milgram)}
 [data-faction="ledger"]{--accent:var(--c-ledger)}
+[data-faction="none"]{--accent:#a4a49f}
+[data-theme="light"] [data-faction="none"]{--accent:#77776f}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;word-break:keep-all}
 p{margin:0 0 .45em}

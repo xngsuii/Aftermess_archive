@@ -55,6 +55,21 @@ export const PROFILE_FIELDS = [
   { k: "blood", label: "혈액형", ph: "RH+A" }
 ];
 
+// 프로필 파일: 편집기에서 저장하고, 편집기나 페르소나 페이지에서 불러온다. HTML 저장본에도 같은 내용을 넣어 둔다.
+export const packProfile = data => JSON.stringify({ afms: "profile", v: 1, data });
+export function parseProfile(text) {
+  const t = String(text).trim();
+  let d;
+  if (t.startsWith("{")) d = JSON.parse(t);
+  else {
+    const s = new DOMParser().parseFromString(t, "text/html").getElementById("afms-data");
+    if (!s) throw new Error("no-data");
+    d = JSON.parse(s.textContent);
+  }
+  d = d && d.afms === "profile" ? d.data : d;
+  if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("bad");
+  return d;
+}
 export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1] || "";
 
 // ph: 내용이 비었을 때 틀만 보여 줄 자리 표시 (편집기 미리보기에서만 넘긴다)

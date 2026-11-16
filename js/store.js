@@ -4,7 +4,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export const FAC = ["ww", "milgram", "ledger"];
-export const S = { site: null, factions: {}, chars: [], memos: [], user: null, fac: "ww", openChar: null, tab: "profile", tag: "" };
+export const S = { site: null, factions: {}, chars: [], personas: [], memos: [], user: null, fac: "ww", openChar: null, tab: "profile", tag: "" };
 
 const rand = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const newId = p => p + "_" + rand();
@@ -34,7 +34,8 @@ export async function loadAll(step) {
   const got = {}; fs.forEach(d => got[d.id] = d.data());
   for (const k of FAC) S.factions[k] = { ...DEF_FAC[k], ...(got[k] || {}) };
   const cs = await getDocs(collection(db, "characters")); step();
-  S.chars = cs.docs.map(d => ({ id: d.id, ...d.data() }));
+  const all = cs.docs.map(d => ({ id: d.id, ...d.data() }));
+  S.chars = all.filter(c => !c.persona); S.personas = all.filter(c => c.persona);
   sortChars();
   const ms = await getDocs(collection(db, "memos")); step();
   S.memos = ms.docs.map(d => normMemo({ id: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0));
@@ -60,21 +61,21 @@ function normMemo(m) {
   delete m.charId;
   return m;
 }
-function sortChars() { S.chars.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)); }
+function sortChars() { [S.chars, S.personas].forEach(l => l.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))); }
 
 export async function saveSite(v) { await setDoc(doc(db, "site", "main"), v); S.site = v; }
 export async function saveFaction(k, v) { await setDoc(doc(db, "factions", k), v); S.factions[k] = v; }
 export async function saveChar(v) {
   const { id, ...rest } = v;
   await setDoc(doc(db, "characters", id), rest);
-  const i = S.chars.findIndex(c => c.id === id);
-  if (i < 0) S.chars.push(v); else S.chars[i] = v;
+  const list = v.persona ? S.personas : S.chars, i = list.findIndex(c => c.id === id);
+  if (i < 0) list.push(v); else list[i] = v;
   sortChars();
 }
 export async function delChar(id) {
-  const c = S.chars.find(x => x.id === id);
+  const c = [...S.chars, ...S.personas].find(x => x.id === id);
   await deleteDoc(doc(db, "characters", id));
-  S.chars = S.chars.filter(x => x.id !== id);
+  S.chars = S.chars.filter(x => x.id !== id); S.personas = S.personas.filter(x => x.id !== id);
   if (c) collectIds(c).forEach(delImage);
 }
 export async function saveMemo(v) {

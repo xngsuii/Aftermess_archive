@@ -5,6 +5,7 @@ import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, n
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
+import { PACT, drawPersona, openPersona } from "./persona.js";
 
 const app = document.getElementById("app");
 S.fold = { people: false, chron: false };
@@ -176,6 +177,7 @@ function render() {
   app.innerHTML = hero(S.site) + (S.view === "world" ? world(S.site) : S.view === "faction" ? faction(S.factions[S.fac]) + people() : S.view === "trivia" ? trivia() : "");
   drawFile();
   hydrate(app);
+  drawPersona();
 }
 
 // ---------- 편집 ----------
@@ -356,6 +358,7 @@ const ACT = {
   trkopen(_, el) { toggleTrackText(el); },
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
+Object.assign(ACT, PACT);
 document.addEventListener("click", e => {
   if (e.target.closest(".lb-cap.edit")) return;
   if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }
@@ -414,7 +417,7 @@ const cityStep = () => {
 };
 cityStep();
 const cityT = setInterval(cityStep, 2400);
-const enterSite = () => { LD.classList.add("done"); clearInterval(cityT); };
+const enterSite = () => { LD.classList.add("done"); clearInterval(cityT); if (location.hash === "#persona" && S.site) openPersona(); };
 let goal = 6, cur = 0;
 (function tick() {
   cur += Math.max(0.4, (goal - cur) * 0.1); if (cur > goal) cur = goal;
@@ -443,7 +446,7 @@ document.addEventListener("keydown", e => { if (e.key === "Enter" && LD.classLis
 // ---------- 메인 화면 넘김: 메인에서 아래로 굴리면 한 번에 다음 화면으로 넘어간다 ----------
 let sliding = false;
 const heroH = () => document.getElementById("top")?.offsetHeight || innerHeight;
-const blocked = () => document.body.classList.contains("in-editor") || document.getElementById("modal").classList.contains("on") || document.body.classList.contains("adjusting") || document.getElementById("lb").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
+const blocked = () => document.body.classList.contains("in-editor") || document.body.classList.contains("in-persona") || document.getElementById("modal").classList.contains("on") || document.body.classList.contains("adjusting") || document.getElementById("lb").classList.contains("on") || !document.getElementById("loader").classList.contains("done");
 function slideTo(to) {
   sliding = true;
   const from = scrollY, t0 = performance.now(), dur = 550;
@@ -515,7 +518,7 @@ async function endAdjust(save) {
   document.body.classList.remove("adjusting"); a.box.classList.remove("adj-on"); adjBar.classList.remove("on");
   if (save) {
     const [kind, p1, p2] = a.path.split("|");
-    const src = kind === "site" ? S.site : kind === "fac" ? S.factions[p1] : S.chars.find(c => c.id === p1);
+    const src = kind === "site" ? S.site : kind === "fac" ? S.factions[p1] : [...S.chars, ...S.personas].find(c => c.id === p1);
     const v = structuredClone(src), key = kind === "site" ? p1 : p2;
     if (a.move) { v[key + "X"] = +a.x.toFixed(1); v[key + "Y"] = +a.y.toFixed(1); v[key + "W"] = +a.w.toFixed(1); }
     else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`; }

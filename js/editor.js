@@ -1,6 +1,6 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
 const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
@@ -95,7 +95,7 @@ function form() {
   const box = document.getElementById("ed-form");
   box.innerHTML = `<p class="ed-note">입력한 내용은 이 브라우저에만 자동 저장됩니다. 서버에는 올라가지 않습니다.</p>`;
   box.append(buildFields([
-    { k: "faction", label: "포인트 컬러", type: "select", options: [["ww", "레드 (W.W)"], ["milgram", "블루 (MILGRAM)"], ["ledger", "옐로 (LEDGER)"]] },
+    { k: "faction", label: "포인트 컬러", type: "select", options: [["ww", "레드 (W.W)"], ["milgram", "블루 (MILGRAM)"], ["ledger", "옐로 (LEDGER)"], ["none", "그레이 (무소속)"]] },
     ...PROFILE_FIELDS.filter(f => !f.site)], data, { local: true, change: changed }));
 }
 function download(name, blob) {
@@ -110,7 +110,8 @@ async function exportHtml() {
   const html = `<!doctype html><html lang="ko" data-theme="${document.documentElement.dataset.theme}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(data.name || data.num || "Profile")}</title>
 <link rel="stylesheet" href="${FONT}"><style>${css}\nbody{background:var(--bg)}.pf{max-width:760px;margin:0 auto}</style></head>
-<body data-faction="${data.faction}">${renderProfile(data, { static: true })}</body></html>`;
+<body data-faction="${data.faction}">${renderProfile(data, { static: true })}
+<script type="application/json" id="afms-data">${packProfile(data).replace(/</g, "\\u003c")}</script></body></html>`;
   download(fileName() + ".html", new Blob([html], { type: "text/html" }));
 }
 async function exportPng(btn) {
@@ -135,12 +136,22 @@ async function build() {
   data = { ...BLANK(), ...((await load()) || {}) };
   const el = document.getElementById("editor");
   el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back">← 돌아가기</button><h3>프로필 편집기</h3>
-    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><button class="btn" id="ed-html">HTML 저장</button><button class="btn pri" id="ed-png">이미지 저장</button></div>
+    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><button class="btn" id="ed-json">파일 저장</button><button class="btn" id="ed-html">HTML 저장</button><button class="btn pri" id="ed-png">이미지 저장</button></div>
     <div class="ed-grid"><div class="ed-pv" id="ed-pv"></div><div class="ed-form" id="ed-form"></div></div>`;
   form(); preview(); bindImage(el.querySelector("#ed-pv"));
   el.querySelector("#ed-fit").onclick = e => { fit = !fit; e.currentTarget.textContent = fit ? "100% 보기" : "맞춤 보기"; applyFit(); };
   el.querySelector("#ed-html").onclick = () => exportHtml().catch(e => { console.error(e); toast("HTML을 만들지 못했습니다."); });
   el.querySelector("#ed-png").onclick = e => exportPng(e.currentTarget);
+  // 파일 저장: 나중에 다시 불러오거나 페르소나 페이지에 올릴 수 있는 프로필 파일
+  el.querySelector("#ed-json").onclick = () => download(fileName() + ".json", new Blob([packProfile(data)], { type: "application/json" }));
+  el.querySelector("#ed-open").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    let d;
+    try { d = parseProfile(await f.text()); }
+    catch (err) { return toast(err.message === "no-data" ? "이 HTML에는 프로필 데이터가 들어 있지 않습니다. 새로 저장한 파일만 불러올 수 있습니다." : "프로필 파일을 읽지 못했습니다."); }
+    if (!confirm("작성 중인 내용을 불러온 파일 내용으로 바꿀까요?")) return;
+    data = { ...BLANK(), ...d }; moving = null; save(); form(); preview(); toast("프로필을 불러왔습니다.");
+  };
   el.querySelector("#ed-reset").onclick = () => {
     if (!confirm("작성 중인 내용을 모두 지우고 새로 시작할까요?")) return;
     data = BLANK(); save(); form(); preview();

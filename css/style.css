@@ -575,3 +575,27 @@ textarea.tall{min-height:340px}
 #facsw .toc button:hover{color:var(--fg)}
 #facsw .toc button.cur{color:var(--accent);border-right-color:var(--accent)}
 .map-note.ph{opacity:.45;border:1px dashed var(--line);padding:4px 8px;cursor:pointer;pointer-events:auto}
+
+/* v27: 페르소나 페이지 (왼쪽에서 들어온다) */
+#persona{position:fixed;inset:0;z-index:40;background:var(--bg);transform:translateX(-100%);transition:transform .6s cubic-bezier(.7,0,.2,1);display:flex;flex-direction:column;visibility:hidden}
+body.in-persona #persona{transform:none;visibility:visible}
+body.in-persona #site{transform:translateX(30%);opacity:0;pointer-events:none}
+body.in-persona{overflow:hidden}
+body.in-persona #facsw,body.in-persona #totop{display:none}
+#bar #btn-ps{color:var(--fg3);opacity:.55;font-size:12px;letter-spacing:0}
+#bar #btn-ps:hover{opacity:1}
+.ps-bar h3{letter-spacing:.12em;font-weight:900}
+.ps-body{flex:1;overflow-y:auto}
+.ps-body .sec{padding-top:56px}
+.ps-body .fsub{margin-bottom:26px}
+.ps-body label.ed input{display:none}
+.pflip{perspective:1800px;perspective-origin:50% 320px}
+.pflip .file-b{transition:transform .23s ease-in,opacity .23s;transform-origin:50% 320px}
+.pflip.out .file-b{transform:rotateY(88deg);opacity:.25}
+.pflip.in .file-b{transform:rotateY(-88deg);opacity:.25;transition:none}
+.psecret{min-height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:48px 20px;background:repeating-linear-gradient(135deg,transparent 0 14px,color-mix(in srgb,var(--fg) 4%,transparent) 14px 15px)}
+.psecret small{font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--fg3)}
+.psecret strong{font-size:clamp(44px,10vw,84px);font-weight:900;letter-spacing:-.045em;line-height:.92;text-transform:uppercase;color:var(--fg)}
+.psecret i{width:44px;height:3px;background:var(--accent);margin:6px 0}
+.psecret p{font-size:15px;font-weight:800;margin:0;letter-spacing:.04em}
+.psecret span{font-size:11px;color:var(--fg3);letter-spacing:.08em}
