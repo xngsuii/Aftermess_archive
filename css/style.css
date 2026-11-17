@@ -617,3 +617,21 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .dd-m button{padding:10px 14px;font-size:12px;font-weight:700;text-align:left;color:var(--fg)}
 .dd-m button:hover{background:var(--bg3)}
 .dd-m button+button{border-top:1px solid var(--line)}
+
+/* v29: 편집기에서 찾아간 칸 표시 */
+@keyframes fldhit{0%,40%{background:color-mix(in srgb,var(--accent) 22%,transparent)}100%{background:transparent}}
+.fld.fld-hit{animation:fldhit 1.4s ease-out;border-radius:4px;box-shadow:-3px 0 0 var(--accent)}
+.ed-pv .pf{cursor:pointer}
+/* v29: 메인 메뉴 Michroma + 마우스를 올리면 글리치 */
+.hmenu>button{position:relative;font-family:"Michroma",var(--font);font-weight:400;font-size:clamp(20px,2.3vw,34px);letter-spacing:.04em;line-height:1.35}
+.hmenu>button:hover{letter-spacing:.04em}
+.hmenu>button::before,.hmenu>button::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;padding:inherit;opacity:0;pointer-events:none}
+.hmenu>button::before{color:#ff2a4d}
+.hmenu>button::after{color:#2ae8ff}
+.hmenu>button:hover::before{opacity:.85;animation:glA .5s steps(2,end) infinite}
+.hmenu>button:hover::after{opacity:.85;animation:glB .42s steps(2,end) infinite}
+.hmenu>button:hover{animation:glM .9s steps(1,end) infinite}
+@keyframes glA{0%{clip-path:inset(10% 0 62% 0);transform:translate(-3px,-1px)}25%{clip-path:inset(55% 0 20% 0);transform:translate(3px,1px)}50%{clip-path:inset(30% 0 45% 0);transform:translate(-2px,0)}75%{clip-path:inset(78% 0 4% 0);transform:translate(2px,-1px)}100%{clip-path:inset(4% 0 80% 0);transform:translate(-1px,1px)}}
+@keyframes glB{0%{clip-path:inset(66% 0 8% 0);transform:translate(3px,1px)}25%{clip-path:inset(18% 0 60% 0);transform:translate(-3px,0)}50%{clip-path:inset(44% 0 30% 0);transform:translate(2px,-1px)}75%{clip-path:inset(2% 0 84% 0);transform:translate(-2px,1px)}100%{clip-path:inset(70% 0 12% 0);transform:translate(1px,0)}}
+@keyframes glM{0%,88%,100%{transform:none}90%{transform:translate(2px,0) skewX(-6deg)}94%{transform:translate(-2px,0)}}
+@media(prefers-reduced-motion:reduce){.hmenu>button:hover,.hmenu>button:hover::before,.hmenu>button:hover::after{animation:none}.hmenu>button:hover::before,.hmenu>button:hover::after{opacity:0}}

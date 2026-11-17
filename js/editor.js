@@ -90,6 +90,33 @@ function bindImage(pv) {
   addEventListener("resize", applyFit);
   addEventListener("keydown", e => { if (e.key === "Escape" && moving) setMoving(null); });
 }
+// 미리보기에서 누른 곳 → 편집 칸 (위에서부터 먼저 맞는 것)
+const PICK = [
+  [".pf-top>span:nth-child(3)", "clearance"], [".pf-top>span:nth-child(4)", "topRight"],
+  [".pf-id small", "serial"], [".pf-id h1", "num"], [".pf-tag", "tagline"], [".pf-id", "intro"],
+  [".pf-main", "mainImg"], [".pf-chip.c1", "height"], [".pf-chip.c2", "nation"], [".pf-chip.c3", "age"],
+  [".pf-sintro", "secretIntro"], [".pf-simg", "secretImg"], [".pf-sbody", "secretBody"], [".pf-srec", "secretRecs"],
+  [".pf-sfoot", "realName"], [".pf-secret", "useSecret"], [".pf-sfig,.pf-sidebox", "sideImg"]];
+const SEC = { Profile: "profile", Affiliation: "affil", Record: "record", Prologue: "tracks" };
+function pickField(t) {
+  for (const [s, k] of PICK) if (t.closest(s)) return k;
+  const h = t.closest(".pf-sec")?.querySelector("h2");
+  return h && SEC[h.textContent.trim()];
+}
+function jumpTo(k) {
+  const w = document.querySelector(`#ed-form [data-f="${k}"]`); if (!w) return;
+  const d = w.closest("details"); if (d) d.open = true;
+  w.scrollIntoView({ behavior: "smooth", block: "center" });
+  document.querySelectorAll("#ed-form .fld-hit").forEach(x => x.classList.remove("fld-hit")); void w.offsetWidth; w.classList.add("fld-hit");
+  const i = w.querySelector("input:not([type=file]):not([type=range]):not([type=checkbox]),textarea");
+  if (i) i.focus({ preventScroll: true });
+}
+function bindPick(pv) {
+  pv.addEventListener("click", e => {
+    if (moving || e.target.closest("[data-a],a")) return;
+    const k = pickField(e.target); if (k) jumpTo(k);
+  });
+}
 function changed() {
   preview();
   clearTimeout(timer); timer = setTimeout(save, 500);
@@ -141,7 +168,7 @@ async function build() {
   el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back" aria-label="돌아가기" title="돌아가기">←</button><h3>PROFILE EDITOR</h3>
     <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><div class="dd" id="ed-save"><button class="btn pri" id="ed-save-b">저장 ▾</button><div class="dd-m"><button id="ed-json">JSON 저장</button><button id="ed-html">HTML 저장</button><button id="ed-png">이미지 저장 (PNG)</button></div></div></div>
     <div class="ed-grid"><div class="ed-pv" id="ed-pv"></div><div class="ed-form" id="ed-form"></div></div>`;
-  form(); preview(); bindImage(el.querySelector("#ed-pv"));
+  form(); preview(); bindImage(el.querySelector("#ed-pv")); bindPick(el.querySelector("#ed-pv"));
   el.querySelector("#ed-fit").onclick = e => { fit = !fit; e.currentTarget.textContent = fit ? "100% 보기" : "맞춤 보기"; applyFit(); };
   el.querySelector("#ed-html").onclick = () => exportHtml().catch(e => { console.error(e); toast("HTML을 만들지 못했습니다."); });
   el.querySelector("#ed-png").onclick = () => exportPng(el.querySelector("#ed-save-b"));

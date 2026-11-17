@@ -131,6 +131,7 @@ export function buildFields(schema, obj, ctx = {}) {
       continue;
     }
     const w = h("div", "fld"), lab = h("label", "", f.label);
+    if (f.k) w.dataset.f = f.k;
     w.append(lab);
     if (f.type === "list") {
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];
