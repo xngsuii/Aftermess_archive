@@ -671,3 +671,11 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 
 /* v33: 메뉴 글꼴을 Zalando Sans Expanded Bold로 */
 .mw{font-family:"Zalando Sans Expanded",var(--font);font-weight:700}
+
+/* v34: 큰 메뉴는 세로로 살짝 누르고 자간을 조금 줄인다. 오른쪽 위에 진영 색 번호 */
+.hmenu>button{letter-spacing:.01em}
+.hmenu>button:hover{letter-spacing:.01em}
+.hmenu>button .mw{transform:scaleY(.88);transform-origin:50% 100%}
+.hmenu>button:hover .mw{animation:glJitSq 1s steps(1,end) 1}
+@keyframes glJitSq{0%,100%{transform:scaleY(.88)}10%{transform:translate(1px,0) scaleY(.88)}20%{transform:scaleY(.88)}50%{transform:translate(-1px,0) scaleY(.88)}58%{transform:scaleY(.88)}}
+.hmenu .mn{position:absolute;right:0;top:0;transform:translate(115%,-35%);font-family:"Zalando Sans Expanded",var(--font);font-weight:700;font-size:max(10px,.26em);letter-spacing:.04em;line-height:1;vertical-align:baseline}
