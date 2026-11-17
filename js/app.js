@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 import { PACT, hooks, drawPersona, openPersona } from "./persona.js";
 
@@ -503,7 +503,7 @@ const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 function applyAdj() {
   const { t, move, x, y, w } = adj;
   if (move) { t.style.left = x + "%"; t.style.top = y + "%"; t.style.width = w + "%"; }
-  else if (t.tagName === "IMG") t.style.objectPosition = t.style.transformOrigin = `${x}% ${y}%`;
+  else if (t.tagName === "IMG") { t.style.objectPosition = t.style.transformOrigin = `${x}% ${y}%`; t.style.transform = (adj.tx || adj.ty ? `translate(${adj.tx}%,${adj.ty}%) ` : "") + (adj.scale || ""); }
   else t.style.backgroundPosition = `${x}% ${y}%`;
 }
 function startAdjust(box) {
@@ -511,7 +511,8 @@ function startAdjust(box) {
   const t = box.querySelector(":scope > .pos-t") || box, cs = getComputedStyle(t);
   const cur = move ? [parseFloat(t.style.left), parseFloat(t.style.top)]
     : (t.tagName === "IMG" ? cs.objectPosition : cs.backgroundPosition).split(" ").map(parseFloat);
-  adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60 };
+  const tr = ((t.style.transform || "").match(/translate\(([-\d.]+)%,\s*([-\d.]+)%\)/) || []).slice(1).map(parseFloat), scale = (t.style.transform || "").match(/scale\([^)]*\)/)?.[0] || "";
+  adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60, tx: tr[0] || 0, ty: tr[1] || 0, scale };
   document.body.classList.add("adjusting"); box.classList.add("adj-on");
   box.closest(".pcard")?.classList.toggle("flip", box.classList.contains("pc-b"));
   getSelection()?.removeAllRanges();
@@ -526,7 +527,8 @@ async function endAdjust(save) {
     const src = kind === "site" ? S.site : kind === "fac" ? S.factions[p1] : [...S.chars, ...S.personas].find(c => c.id === p1);
     const v = structuredClone(src), key = kind === "site" ? p1 : p2;
     if (a.move) { v[key + "X"] = +a.x.toFixed(1); v[key + "Y"] = +a.y.toFixed(1); v[key + "W"] = +a.w.toFixed(1); }
-    else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`; }
+    else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`;
+      if (a.t.tagName === "IMG" && /Pos$/.test(key)) { const b = key.slice(0, -3); o[b + "DX"] = +a.tx.toFixed(1); o[b + "DY"] = +a.ty.toFixed(1); } }
     try { await (kind === "site" ? saveSite(v) : kind === "fac" ? saveFaction(p1, v) : saveChar(v)); toast("위치를 저장했습니다"); }
     catch (e) { console.error(e); toast("저장하지 못했습니다. " + why(e)); }
   }
@@ -546,7 +548,11 @@ document.addEventListener("pointermove", e => {
   const r = (adj.move ? adj.box.parentElement : adj.box).getBoundingClientRect();
   const dx = (e.clientX - drag.px) / r.width * 100, dy = (e.clientY - drag.py) / r.height * 100;
   drag = { px: e.clientX, py: e.clientY };
-  adj.x = clamp(adj.x + (adj.move ? dx : -dx)); adj.y = clamp(adj.y + (adj.move ? dy : -dy));
+  if (!adj.move && adj.t.tagName === "IMG") {
+    // 틀 끝에 닿으면 이미지를 틀 밖으로 밀어낸다 (틀은 그대로)
+    const ow = adj.t.offsetWidth / r.width, oh = adj.t.offsetHeight / r.height;
+    [adj.x, adj.tx] = dragAxis(adj.x, adj.tx, dx, dx / ow); [adj.y, adj.ty] = dragAxis(adj.y, adj.ty, dy, dy / oh);
+  } else { adj.x = clamp(adj.x + (adj.move ? dx : -dx)); adj.y = clamp(adj.y + (adj.move ? dy : -dy)); }
   applyAdj();
 });
 document.addEventListener("pointerup", () => drag = null);
@@ -560,7 +566,7 @@ document.addEventListener("click", e => {
   // 원래대로: 처음 자리로 돌려 놓는다 (저장을 눌러야 반영)
   const k = adj.path.split("|").pop();
   if (adj.move) Object.assign(adj, k === "logo" ? { x: 50, y: 60, w: 60 } : { x: 35.5, y: 0, w: 64.5 });
-  else Object.assign(adj, k === "mainImgPos" ? { x: 50, y: 0 } : { x: 50, y: 50 });
+  else Object.assign(adj, k === "mainImgPos" ? { x: 50, y: 0 } : { x: 50, y: 50 }, { tx: 0, ty: 0 });
   applyAdj();
 }, true);
 addEventListener("wheel", e => {

@@ -14,7 +14,7 @@ export const PROFILE_FIELDS = [
   { type: "ranges", label: "상단 이미지 · 하단 페이드", items: [
     { k: "mainFadeH", label: "범위", min: 0, max: 100, step: 1, def: 62, mul: 1 },
     { k: "mainFade", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
-  { type: "reset", label: "위치·확대 초기화", keys: ["mainImgPos", "mainImgZoom"] },
+  { type: "reset", label: "위치·확대 초기화", keys: ["mainImgPos", "mainImgZoom", "mainImgDX", "mainImgDY"] },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
@@ -74,10 +74,20 @@ export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|short
 
 // ph: 내용이 비었을 때 틀만 보여 줄 자리 표시 (편집기 미리보기에서만 넘긴다)
 const sec = (title, sub, body, ph) => body || ph ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body || ph}</section>` : "";
+// 끌어서 옮기기 한 축: p는 object-position(%), t는 밀어낸 정도(%), d는 포인터가 움직인 양(이미지 대비 %).
+// 이미지가 틀 끝에 닿기 전까지는 위치를 바꾸고, 닿은 뒤에는 이미지를 틀 밖으로 밀어낸다.
+export function dragAxis(p, t, dPos, dMove) {
+  if (t) { const nt = t + dMove; return Math.sign(nt) !== Math.sign(t) ? [p, 0] : [p, Math.max(-100, Math.min(100, nt))]; }
+  const np = p - dPos;
+  if (np >= 0 && np <= 100) return [np, 0];
+  return [np < 0 ? 0 : 100, Math.max(-100, Math.min(100, dMove))];
+}
 // 이미지의 위치와 확대. key: "mainImg" | "sideImg"
 export const imgStyle = (c, key = "mainImg") => {
   const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(1, +c[key + "Zoom"] || 1);
-  return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:scale(${z})`;
+  // DX·DY: 틀은 그대로 두고 이미지만 틀 밖으로 밀어낸 정도 (이미지 크기 대비 %)
+  const dx = +c[key + "DX"] || 0, dy = +c[key + "DY"] || 0;
+  return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:${dx || dy ? `translate(${dx}%,${dy}%) ` : ""}scale(${z})`;
 };
 export const mainImgStyle = c => imgStyle(c, "mainImg");
 // 전신 이미지: Profile~Record 영역 안에서의 왼쪽·위 위치와 너비(영역 대비 %). 처음에는 오른쪽 위.
@@ -149,7 +159,7 @@ export function renderProfile(c, opt = {}) {
     </div>
     ${sec("Prologue", opt.static ? "도입부 · 원판을 누르면 테마곡으로 이동" : "도입부 · 원판을 누르면 테마곡 재생", tracks.map(trk).join(""), noTrk)}
     ${secret(c, opt)}
-    <div class="pf-foot"></div>
+    <div class="pf-end"><div class="pf-foot"></div><span>© ↘</span></div>
   </div>`;
 }
 

@@ -157,3 +157,8 @@
 
 /* v11: 칩은 블러 없이 반투명만 */
 .pf-chip,.pf-sidebox .pf-chip,.pf-sanchor .pf-chip{backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* v12: 맨 아래 바코드 옆 © ↘ */
+.pf-end{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px}
+.pf-end .pf-foot{margin-top:0}
+.pf-end span{font-size:17px;font-weight:700;line-height:1;color:var(--fg);letter-spacing:.2em;margin-right:-.2em}

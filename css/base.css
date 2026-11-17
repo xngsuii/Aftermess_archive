@@ -1,6 +1,6 @@
 :root{
   --bg:#070708;--bg2:#101012;--bg3:#18181b;
-  --fg:#f2f2f0;--fg2:#a8a8a4;--fg3:#6a6a67;
+  --fg:#f2f2f0;--fg2:#bcbcb7;--fg3:#7f7f7b;
   --line:rgba(255,255,255,.13);
   --c-ww:#e5342f;--c-milgram:#2f6dff;--c-ledger:#f0b323;
   --accent:var(--c-ww);

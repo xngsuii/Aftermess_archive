@@ -190,3 +190,6 @@
 #loader>.lz-r{padding-bottom:118px}
 /* 오른쪽 칸이 짧으면 권총 그림이 줄어들어 ACCESS와 겹치지 않는다 */
 #loader>.lz-r .lz-gun{flex:1 1 0;min-height:0;height:auto}
+
+/* v7: 좁은 화면에서 아래 줄(.lz-b)이 SKIP·ACCESS 위를 덮어 눌리지 않던 문제 */
+#loader>.lz-go,#loader>.lz-pct{position:relative;z-index:3}

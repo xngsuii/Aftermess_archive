@@ -1,6 +1,6 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile, dragAxis } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
 const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
@@ -70,7 +70,10 @@ function bindImage(pv) {
     }
     // 확대한 만큼 천천히 움직여야 손가락을 따라오는 느낌이 난다
     const r = im.getBoundingClientRect(), [px, py] = (data[k + "Pos"] || (k === "mainImg" ? "50% 0%" : "50% 50%")).split(" ").map(parseFloat);
-    data[k + "Pos"] = `${clamp(px - (e.clientX - grab.x) / r.width * 100, 0, 100).toFixed(1)}% ${clamp(py - (e.clientY - grab.y) / r.height * 100, 0, 100).toFixed(1)}%`;
+    const mx = e.clientX - grab.x, my = e.clientY - grab.y;
+    const [nx, tx] = dragAxis(px, +data[k + "DX"] || 0, mx / r.width * 100, mx / im.offsetWidth * 100);
+    const [ny, ty] = dragAxis(py, +data[k + "DY"] || 0, my / r.height * 100, my / im.offsetHeight * 100);
+    data[k + "Pos"] = `${nx.toFixed(1)}% ${ny.toFixed(1)}%`; data[k + "DX"] = +tx.toFixed(1); data[k + "DY"] = +ty.toFixed(1);
     grab = { x: e.clientX, y: e.clientY }; paintImg(k);
   });
   addEventListener("pointerup", () => grab = null);
