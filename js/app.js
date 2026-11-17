@@ -25,16 +25,16 @@ const redraw = () => { drawFile(); drawPersona(); };
 // ---------- 화면 ----------
 // 메인 메뉴 글자 (BBH Bartle). data-t는 글리치 때 겹치는 빨간 글자
 const mw = t => `<span class="mw" data-t="${esc(t)}">${esc(t)}</span>`;
-// 큰 메뉴 오른쪽 위의 작은 번호 (진영 색: 01 W.W, 02 MILGRAM, 03 LEDGER)
-const mn = (n, k) => `<sup class="mn" style="color:var(--c-${k})" aria-hidden="true">${n}</sup>`;
+// 큰 메뉴 오른쪽 위의 작은 번호 (보고 있는 진영 색)
+const mn = n => `<sup class="mn" aria-hidden="true">${n}</sup>`;
 function hero(s) {
   return `<section id="top" class="hero" data-pos="site|heroImgPos"><div class="hero-bg pos-t" ${bgAttr(s.heroImg, s.heroImgPos)}></div>${ed("hero", "메인 편집")}
     <p class="kicker">${inl(s.kicker)}</p>
     <nav class="hmenu open">
-      <button class="${S.view === "world" ? "on" : ""}" data-a="view:world">${mw("WORLD")}${mn("01", "ww")}</button>
-      <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf">${mw("FACTION")}${mn("02", "milgram")}</button>
+      <button class="${S.view === "world" ? "on" : ""}" data-a="view:world">${mw("WORLD")}${mn("01")}</button>
+      <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf">${mw("FACTION")}${mn("02")}</button>
       <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}">${mw(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
-      <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia">${mw("TRIVIA")}${mn("03", "ledger")}</button>
+      <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia">${mw("TRIVIA")}${mn("03")}</button>
     </nav>
     ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%">` : ""}</section>`;
 }

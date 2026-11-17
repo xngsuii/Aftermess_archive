@@ -679,3 +679,13 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .hmenu>button:hover .mw{animation:glJitSq 1s steps(1,end) 1}
 @keyframes glJitSq{0%,100%{transform:scaleY(.88)}10%{transform:translate(1px,0) scaleY(.88)}20%{transform:scaleY(.88)}50%{transform:translate(-1px,0) scaleY(.88)}58%{transform:scaleY(.88)}}
 .hmenu .mn{position:absolute;right:0;top:0;transform:translate(115%,-35%);font-family:"Zalando Sans Expanded",var(--font);font-weight:700;font-size:max(10px,.26em);letter-spacing:.04em;line-height:1;vertical-align:baseline}
+
+/* v35: 번호·글리치는 보고 있는 진영 색 하나로 통일 (.hmenu에서 정해 두면 작은 버튼의 자기 진영 색에 바뀌지 않는다) */
+.hmenu{--vc:var(--accent)}
+.hmenu .mn{color:var(--vc)}
+.hmenu .mw{position:relative}
+.hmenu .mw::before{content:attr(data-t);position:absolute;inset:0;color:var(--vc);opacity:0;pointer-events:none}
+.hmenu>button .mw::before{color:var(--vc)}
+.hm-sub button:hover .mw::before{animation:glOne 1s steps(1,end) 1}
+.hm-sub button:hover .mw{animation:glJit 1s steps(1,end) 1}
+@media(prefers-reduced-motion:reduce){.hm-sub button:hover .mw,.hm-sub button:hover .mw::before{animation:none}}
