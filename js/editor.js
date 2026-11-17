@@ -82,7 +82,7 @@ function bindImage(pv) {
     e.preventDefault();
     const k = moving;
     if (k === "sideImg") { const b = sideBox(); data.sideImgX = b.x; data.sideImgY = b.y; data.sideImgW = +clamp(b.w * (1 - e.deltaY * 0.001), 20, 200).toFixed(1); }
-    else data[k + "Zoom"] = +clamp((data[k + "Zoom"] || 1) * (1 - e.deltaY * 0.001), 1, 3).toFixed(2);
+    else data[k + "Zoom"] = +clamp((data[k + "Zoom"] || 1) * (1 - e.deltaY * 0.001), 0.5, 1.5).toFixed(2);
     paintImg(k); syncZoom(k);
   }, { passive: false });
   pv.addEventListener("dragstart", e => { if (moving) e.preventDefault(); });

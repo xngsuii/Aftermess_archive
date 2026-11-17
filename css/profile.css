@@ -166,3 +166,6 @@
 /* v13: 행간 1.85, 문단 간격 0.8em */
 .pf{line-height:1.85}
 .pf p{margin-bottom:.8em}
+
+/* v14: 상단 이미지를 불러오기 전에도 자리를 잡아 둔다. 높이가 0이면 확대·이동이 걸린 이미지가 화면에 들어온 것으로 잡히지 않아 끝내 불러오지 않았다 */
+.pf-main img:not([src]){aspect-ratio:4/3;max-height:640px}

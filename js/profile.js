@@ -10,7 +10,7 @@ export const PROFILE_FIELDS = [
   { k: "clearance", label: "보안 등급 (상단 세 번째, Clearance = 아래)", ph: "Seven" },
   { k: "topRight", label: "상단 맨 오른쪽 글 (두 줄까지)", type: "area", plain: true, ph: "Operational Detachment\nMILGRAM" },
   { k: "mainImg", label: "상단 큰 이미지", type: "img" },
-  { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 1, max: 3, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 옮기고 휠로 확대할 수 있습니다." },
+  { k: "mainImgZoom", label: "상단 이미지 확대", type: "range", min: 0.5, max: 1.5, step: 0.01, def: 1, hint: "미리보기에서 이미지를 더블클릭하면 끌어서 옮기고 휠로 확대할 수 있습니다." },
   { type: "ranges", label: "상단 이미지 · 하단 페이드", items: [
     { k: "mainFadeH", label: "범위", min: 0, max: 100, step: 1, def: 62, mul: 1 },
     { k: "mainFade", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
@@ -95,7 +95,7 @@ export function imgDelta(im, px, axis) {
 }
 // 이미지의 위치와 확대. key: "mainImg" | "sideImg"
 export const imgStyle = (c, key = "mainImg") => {
-  const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(1, +c[key + "Zoom"] || 1);
+  const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(0.5, +c[key + "Zoom"] || 1);
   // DX·DY: 틀은 그대로 두고 이미지만 틀 밖으로 밀어낸 정도 (이미지 크기 대비 %)
   const dx = +c[key + "DX"] || 0, dy = +c[key + "DY"] || 0;
   return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:${dx || dy ? `translate(${dx}%,${dy}%) ` : ""}scale(${z})`;

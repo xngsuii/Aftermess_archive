@@ -694,3 +694,7 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .hmenu>button,.hmenu>button:hover{letter-spacing:-.01em}
 .hmenu{top:calc(26% + 3.5vh)}
 @media(max-width:640px){.hmenu{top:calc(22% + 2.5vh)}}
+
+/* v37: 페어 프로필 → 아카이브 파일 */
+#persona .tabs .ps-go{clip-path:none;border:1px solid var(--line);border-radius:2px;margin:0 0 6px 4px;padding:3px 10px;font-size:10px;letter-spacing:.08em;background:none;color:var(--fg)}
+#persona .tabs .ps-go:hover{border-color:var(--accent);color:var(--accent)}

@@ -5,7 +5,7 @@ import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, n
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis, imgDelta } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
-import { PACT, hooks, drawPersona, openPersona } from "./persona.js";
+import { PACT, hooks, drawPersona, openPersona, closePersona } from "./persona.js";
 
 const app = document.getElementById("app");
 S.fold = { people: false, chron: false };
@@ -368,6 +368,12 @@ const ACT = {
   edit(arg) { const i = arg.indexOf(":"), k = i < 0 ? arg : arg.slice(0, i); EDIT[k](i < 0 ? undefined : arg.slice(i + 1)); }
 };
 Object.assign(ACT, PACT); hooks.assets = assetsHtml;
+hooks.openChar = id => {
+  const c = S.chars.find(x => x.id === id); if (!c) return;
+  closePersona();
+  S.view = "faction"; S.fac = c.faction; S.openChar = id; S.tab = c.useProfile === false ? "assets" : "profile";
+  render(); drawFile(true);
+};
 document.addEventListener("click", e => {
   if (e.target.closest(".lb-cap.edit")) return;
   if (e.target.closest("#lb")) { const b = e.target.closest("[data-lb]"); return b ? lbStep(+b.dataset.lb) : lbClose(); }

@@ -29,6 +29,7 @@ function fileHtml(p) {
     : hasProfile(pr) ? renderProfile(pr, {})
     : `<div class="psecret"><small>AFTERMESS · PERSONNEL FILE</small><p>${pr ? esc(nameOf(pr)) : "UNKNOWN"}</p><div class="stamp"><b>SECRET FILE</b></div><span>ACCESS DENIED · 아직 열람할 수 없는 기록입니다</span></div>`;
   return `<div class="file" data-faction="${side === "pair" ? pr?.faction || "none" : p.pfac || "none"}"><div class="tabs">${tab("me", esc(p.num || p.name || "PERSONA"))}${tab("pair", pr ? esc(pr.num || pr.name || "PAIR") : "SECRET")}${tab("asset", "ASSET")}<span class="sp"></span>
+      ${side === "pair" && pr ? `<button class="btn ps-go" data-a="parch:${pr.id}">ARCHIVE FILE ↗</button>` : ""}
       <label class="ed" style="cursor:pointer">프로필 파일 불러오기<input type="file" class="ps-file" data-id="${p.id}" accept=".json,.html,.htm" hidden></label>
       <button class="ed" data-a="pedit:${p.id}">페르소나 편집</button></div>
     <div class="pflip"><div class="file-b">${body}</div></div></div>`;
@@ -127,6 +128,8 @@ document.addEventListener("change", e => {
 // ---------- 동작 (app.js의 ACT에 합쳐진다) ----------
 export const PACT = {
   persona: openPersona, pback: closePersona,
+  // 페어 캐릭터의 아카이브 파일로 바로 간다
+  parch(id) { hooks.openChar?.(id); },
   pchar(id) {
     open = open === id ? null : id; side = "me";
     document.querySelectorAll("#persona .pcard").forEach(el => el.classList.toggle("flip", el.dataset.id === open));
