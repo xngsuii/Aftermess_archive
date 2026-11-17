@@ -668,3 +668,6 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .hmenu>button{font-size:clamp(24px,2.7vw,40px)}
 .hm-sub button{font-size:12px;letter-spacing:.08em}
 .hmenu>button .mw::before{content:attr(data-t);background:none;-webkit-mask:none;mask:none;color:var(--c-ww,#e0002a)}
+
+/* v33: 메뉴 글꼴을 Zalando Sans Expanded Bold로 */
+.mw{font-family:"Zalando Sans Expanded",var(--font);font-weight:700}
