@@ -23,17 +23,16 @@ const anyChar = id => S.chars.find(x => x.id === id) || S.personas.find(x => x.i
 const redraw = () => { drawFile(); drawPersona(); };
 
 // ---------- 화면 ----------
-// 메인 메뉴 글자: 폰트를 올리지 않고 윤곽선 SVG(img/menu)를 마스크로 칠한다. 숫자는 가로:세로 비율
-const MW = { world: 8.1787, faction: 9.5818, trivia: 7.3864, ww: 5.401, milgram: 10.1026, ledger: 8.3854 };
-const mw = k => `<span class="mw" aria-hidden="true" style="-webkit-mask-image:url(img/menu/${k}.svg);mask-image:url(img/menu/${k}.svg);aspect-ratio:${MW[k]}"></span>`;
+// 메인 메뉴 글자 (BBH Bartle). data-t는 글리치 때 겹치는 빨간 글자
+const mw = t => `<span class="mw" data-t="${esc(t)}">${esc(t)}</span>`;
 function hero(s) {
   return `<section id="top" class="hero" data-pos="site|heroImgPos"><div class="hero-bg pos-t" ${bgAttr(s.heroImg, s.heroImgPos)}></div>${ed("hero", "메인 편집")}
     <p class="kicker">${inl(s.kicker)}</p>
     <nav class="hmenu open">
-      <button class="${S.view === "world" ? "on" : ""}" data-a="view:world" aria-label="WORLD">${mw("world")}</button>
-      <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf" aria-label="FACTION">${mw("faction")}</button>
-      <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}" aria-label="${esc(S.factions[k].short || S.factions[k].name)}">${MW[k] ? mw(k) : esc(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
-      <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia" aria-label="TRIVIA">${mw("trivia")}</button>
+      <button class="${S.view === "world" ? "on" : ""}" data-a="view:world">${mw("WORLD")}</button>
+      <button class="${S.view === "faction" ? "on" : ""}" data-a="hmf">${mw("FACTION")}</button>
+      <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}">${mw(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
+      <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia">${mw("TRIVIA")}</button>
     </nav>
     ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%">` : ""}</section>`;
 }

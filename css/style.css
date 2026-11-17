@@ -662,3 +662,9 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .hmenu>button:hover{animation:none}
 .hmenu>button:hover .mw{animation:glJit 1s steps(1,end) 1}
 @media(prefers-reduced-motion:reduce){.hmenu>button:hover .mw,.hmenu>button:hover .mw::before{animation:none}}
+
+/* v32: 메뉴 글자를 다시 글꼴로 (BBH Bartle, 구글 폰트) */
+.mw{display:block;height:auto;aspect-ratio:auto;background:none;-webkit-mask:none;mask:none;font-family:"BBH Bartle",var(--font);font-weight:400;line-height:1;white-space:nowrap}
+.hmenu>button{font-size:clamp(24px,2.7vw,40px)}
+.hm-sub button{font-size:12px;letter-spacing:.08em}
+.hmenu>button .mw::before{content:attr(data-t);background:none;-webkit-mask:none;mask:none;color:var(--c-ww,#e0002a)}
