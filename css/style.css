@@ -635,3 +635,19 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 @keyframes glB{0%{clip-path:inset(66% 0 8% 0);transform:translate(3px,1px)}25%{clip-path:inset(18% 0 60% 0);transform:translate(-3px,0)}50%{clip-path:inset(44% 0 30% 0);transform:translate(2px,-1px)}75%{clip-path:inset(2% 0 84% 0);transform:translate(-2px,1px)}100%{clip-path:inset(70% 0 12% 0);transform:translate(1px,0)}}
 @keyframes glM{0%,88%,100%{transform:none}90%{transform:translate(2px,0) skewX(-6deg)}94%{transform:translate(-2px,0)}}
 @media(prefers-reduced-motion:reduce){.hmenu>button:hover,.hmenu>button:hover::before,.hmenu>button:hover::after{animation:none}.hmenu>button:hover::before,.hmenu>button:hover::after{opacity:0}}
+
+/* v30: 글리치는 빨강 하나만, 마우스를 올리면 1초 동안 한 번만. Michroma는 굵기가 하나뿐이라 브라우저가 굵게 만든다 */
+.hmenu>button{font-weight:700}
+.hm-sub button{font-family:"Michroma",var(--font);font-weight:700;font-size:11px;letter-spacing:.1em}
+.hmenu>button::after{display:none}
+.hmenu>button::before{color:var(--c-ww,#e0002a);opacity:0}
+.hmenu>button:hover::before{opacity:0;animation:glOne 1s steps(1,end) 1}
+.hmenu>button:hover{animation:glJit 1s steps(1,end) 1}
+@keyframes glOne{
+  0%{opacity:.55;clip-path:inset(12% 0 60% 0);transform:translate(-2px,0)}
+  15%{opacity:.55;clip-path:inset(58% 0 18% 0);transform:translate(2px,0)}
+  30%{opacity:.5;clip-path:inset(32% 0 44% 0);transform:translate(-1px,0)}
+  45%{opacity:.45;clip-path:inset(74% 0 6% 0);transform:translate(1px,0)}
+  60%{opacity:.35;clip-path:inset(20% 0 66% 0);transform:translate(-1px,0)}
+  75%,100%{opacity:0;clip-path:inset(0);transform:none}}
+@keyframes glJit{0%,100%{transform:none}10%{transform:translate(1px,0)}20%{transform:none}50%{transform:translate(-1px,0)}58%{transform:none}}
