@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis, imgDelta } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 import { PACT, hooks, drawPersona, openPersona } from "./persona.js";
 
@@ -546,12 +546,11 @@ document.addEventListener("pointerdown", e => {
 document.addEventListener("pointermove", e => {
   if (!adj || !drag) return;
   const r = (adj.move ? adj.box.parentElement : adj.box).getBoundingClientRect();
-  const dx = (e.clientX - drag.px) / r.width * 100, dy = (e.clientY - drag.py) / r.height * 100;
+  const mx = e.clientX - drag.px, my = e.clientY - drag.py, dx = mx / r.width * 100, dy = my / r.height * 100;
   drag = { px: e.clientX, py: e.clientY };
   if (!adj.move && adj.t.tagName === "IMG") {
-    // 틀 끝에 닿으면 이미지를 틀 밖으로 밀어낸다 (틀은 그대로)
-    const ow = adj.t.offsetWidth / r.width, oh = adj.t.offsetHeight / r.height;
-    [adj.x, adj.tx] = dragAxis(adj.x, adj.tx, dx, dx / ow); [adj.y, adj.ty] = dragAxis(adj.y, adj.ty, dy, dy / oh);
+    // 틀 끝에 닿으면(또는 그 방향으로 여유가 없으면) 이미지를 틀 밖으로 밀어낸다 (틀은 그대로)
+    [adj.x, adj.tx] = dragAxis(adj.x, adj.tx, ...imgDelta(adj.t, mx, 0)); [adj.y, adj.ty] = dragAxis(adj.y, adj.ty, ...imgDelta(adj.t, my, 1));
   } else {
     // 전신 이미지는 편집기처럼 영역 밖까지 옮길 수 있다
     const [lo, hi] = adj.box.classList.contains("pf-sfig") ? [-150, 150] : [0, 100];

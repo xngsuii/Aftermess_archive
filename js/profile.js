@@ -76,11 +76,22 @@ export const ytId = u => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|short
 const sec = (title, sub, body, ph) => body || ph ? `<section class="pf-sec"><header><h2>${title}</h2><span>${sub}</span></header>${body || ph}</section>` : "";
 // 끌어서 옮기기 한 축: p는 object-position(%), t는 밀어낸 정도(%), d는 포인터가 움직인 양(이미지 대비 %).
 // 이미지가 틀 끝에 닿기 전까지는 위치를 바꾸고, 닿은 뒤에는 이미지를 틀 밖으로 밀어낸다.
+// 여유(slack)가 없는 축은 위치를 바꿔도 화면이 그대로라서 바로 밀어낸다 (dPos가 NaN)
 export function dragAxis(p, t, dPos, dMove) {
+  if (!isFinite(dPos)) return [p, Math.max(-100, Math.min(100, t + dMove))];
   if (t) { const nt = t + dMove; return Math.sign(nt) !== Math.sign(t) ? [p, 0] : [p, Math.max(-100, Math.min(100, nt))]; }
   const np = p - dPos;
   if (np >= 0 && np <= 100) return [np, 0];
   return [np < 0 ? 0 : 100, Math.max(-100, Math.min(100, dMove))];
+}
+// 이미지를 끈 거리(화면 px)를 [위치 변화 %, 밀어내기 %]로 바꾼다. 가로 axis=0, 세로 axis=1
+// object-fit: cover 로 잘린 여유만큼만 위치(%)가 움직이므로, 여유로 나눠야 손가락을 그대로 따라온다
+export function imgDelta(im, px, axis) {
+  const box = axis ? im.offsetHeight : im.offsetWidth, r = im.getBoundingClientRect(), shown = axis ? r.height : r.width;
+  const u = px * box / (shown || 1);
+  const s = Math.max(im.offsetWidth / (im.naturalWidth || 1), im.offsetHeight / (im.naturalHeight || 1));
+  const slack = (axis ? im.naturalHeight : im.naturalWidth) * s - box;
+  return [slack > 0.5 ? u / slack * 100 : NaN, u / (box || 1) * 100];
 }
 // 이미지의 위치와 확대. key: "mainImg" | "sideImg"
 export const imgStyle = (c, key = "mainImg") => {
