@@ -651,3 +651,14 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
   60%{opacity:.35;clip-path:inset(20% 0 66% 0);transform:translate(-1px,0)}
   75%,100%{opacity:0;clip-path:inset(0);transform:none}}
 @keyframes glJit{0%,100%{transform:none}10%{transform:translate(1px,0)}20%{transform:none}50%{transform:translate(-1px,0)}58%{transform:none}}
+
+/* v31: 메인 메뉴 글자를 이미지(마스크)로. 글리치는 같은 모양을 빨강으로 겹쳐 잠깐 어긋나게 */
+.mw{position:relative;display:block;height:.62em;background:currentColor;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.hmenu>button{font-family:var(--font);font-size:clamp(26px,3vw,44px);line-height:1;padding:0 0 8px}
+.hm-sub button{font-size:15px;padding:4px 0 7px}
+.hmenu>button::before,.hmenu>button::after{content:none}
+.hmenu>button .mw::before{content:"";position:absolute;inset:0;background:var(--c-ww,#e0002a);-webkit-mask:inherit;mask:inherit;-webkit-mask-image:inherit;mask-image:inherit;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;opacity:0}
+.hmenu>button:hover .mw::before{animation:glOne 1s steps(1,end) 1}
+.hmenu>button:hover{animation:none}
+.hmenu>button:hover .mw{animation:glJit 1s steps(1,end) 1}
+@media(prefers-reduced-motion:reduce){.hmenu>button:hover .mw,.hmenu>button:hover .mw::before{animation:none}}
