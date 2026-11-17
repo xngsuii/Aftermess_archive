@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { S, FAC, loadAll, useDefaults, getImage, saveImage, delImage, thumbId, newId, saveSite, saveFaction, saveChar, delChar, saveMemo, delMemo } from "./store.js";
 import { esc, inl, fmt, bgAttr, hydrate, toast, lightbox, lbStep, lbClose, openForm, why } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis, imgDelta } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, toggleTrack, toggleTrackText, toggleSecret, dragAxis, fitImg, imgDelta } from "./profile.js";
 import { openEditor, closeEditor } from "./editor.js";
 import { PACT, hooks, drawPersona, openPersona, closePersona } from "./persona.js";
 
@@ -513,7 +513,10 @@ const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 function applyAdj() {
   const { t, move, x, y, w } = adj;
   if (move) { t.style.left = x + "%"; t.style.top = y + "%"; t.style.width = w + "%"; }
-  else if (t.tagName === "IMG") { t.style.objectPosition = t.style.transformOrigin = `${x}% ${y}%`; t.style.transform = (adj.tx || adj.ty ? `translate(${adj.tx}%,${adj.ty}%) ` : "") + (adj.scale || ""); }
+  else if (t.tagName === "IMG") {
+    t.style.objectPosition = t.style.transformOrigin = `${x}% ${y}%`; t.style.setProperty("--z", adj.z);
+    t.style.transform = (adj.tx || adj.ty ? `translate(${adj.tx}%,${adj.ty}%) ` : "") + `scale(${adj.z})`; fitImg(t);
+  }
   else t.style.backgroundPosition = `${x}% ${y}%`;
 }
 function startAdjust(box) {
@@ -521,12 +524,12 @@ function startAdjust(box) {
   const t = box.querySelector(":scope > .pos-t") || box, cs = getComputedStyle(t);
   const cur = move ? [parseFloat(t.style.left), parseFloat(t.style.top)]
     : (t.tagName === "IMG" ? cs.objectPosition : cs.backgroundPosition).split(" ").map(parseFloat);
-  const tr = ((t.style.transform || "").match(/translate\(([-\d.]+)%,\s*([-\d.]+)%\)/) || []).slice(1).map(parseFloat), scale = (t.style.transform || "").match(/scale\([^)]*\)/)?.[0] || "";
-  adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60, tx: tr[0] || 0, ty: tr[1] || 0, scale };
+  const tr = ((t.style.transform || "").match(/translate\(([-\d.]+)%,\s*([-\d.]+)%\)/) || []).slice(1).map(parseFloat), z = parseFloat(t.style.getPropertyValue("--z")) || 1;
+  adj = { box, t, move, path: box.dataset.pos, x: isNaN(cur[0]) ? 50 : cur[0], y: isNaN(cur[1]) ? 50 : cur[1], w: parseFloat(t.style.width) || 60, tx: tr[0] || 0, ty: tr[1] || 0, z, zoom: /mainImgPos$/.test(box.dataset.pos) };
   document.body.classList.add("adjusting"); box.classList.add("adj-on");
   box.closest(".pcard")?.classList.toggle("flip", box.classList.contains("pc-b"));
   getSelection()?.removeAllRanges();
-  adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : "드래그해서 이미지 위치 조정"}</span><button data-adj="reset">원래대로</button><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
+  adjBar.innerHTML = `<span>${move ? "드래그로 이동 · 휠로 크기 조절" : adj.zoom ? "드래그로 이동 · 휠로 확대/축소 (50~150%)" : "드래그해서 이미지 위치 조정"}</span><button data-adj="reset">원래대로</button><button data-adj="save">저장</button><button data-adj="cancel">취소</button>`;
   adjBar.classList.add("on");
 }
 async function endAdjust(save) {
@@ -538,7 +541,7 @@ async function endAdjust(save) {
     const v = structuredClone(src), key = kind === "site" ? p1 : p2;
     if (a.move) { v[key + "X"] = +a.x.toFixed(1); v[key + "Y"] = +a.y.toFixed(1); v[key + "W"] = +a.w.toFixed(1); }
     else { const ks = key.split("."); let o = v; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = `${a.x.toFixed(1)}% ${a.y.toFixed(1)}%`;
-      if (a.t.tagName === "IMG" && /Pos$/.test(key)) { const b = key.slice(0, -3); o[b + "DX"] = +a.tx.toFixed(1); o[b + "DY"] = +a.ty.toFixed(1); } }
+      if (a.t.tagName === "IMG" && /Pos$/.test(key)) { const b = key.slice(0, -3); o[b + "DX"] = +a.tx.toFixed(1); o[b + "DY"] = +a.ty.toFixed(1); if (a.zoom) o[b + "Zoom"] = +a.z.toFixed(2); } }
     try { await (kind === "site" ? saveSite(v) : kind === "fac" ? saveFaction(p1, v) : saveChar(v)); toast("위치를 저장했습니다"); }
     catch (e) { console.error(e); toast("저장하지 못했습니다. " + why(e)); }
   }
@@ -579,10 +582,12 @@ document.addEventListener("click", e => {
   // 원래대로: 처음 자리로 돌려 놓는다 (저장을 눌러야 반영)
   const k = adj.path.split("|").pop();
   if (adj.move) Object.assign(adj, k === "logo" ? { x: 50, y: 60, w: 60 } : { x: 35.5, y: 0, w: 64.5 });
-  else Object.assign(adj, k === "mainImgPos" ? { x: 50, y: 0 } : { x: 50, y: 50 }, { tx: 0, ty: 0 });
+  else Object.assign(adj, k === "mainImgPos" ? { x: 50, y: 0, z: 1 } : { x: 50, y: 50 }, { tx: 0, ty: 0 });
   applyAdj();
 }, true);
 addEventListener("wheel", e => {
+  // 상단 이미지: 휠로 확대·축소
+  if (adj?.zoom) { e.preventDefault(); adj.z = +clamp(adj.z * (1 - e.deltaY * 0.001), 0.5, 1.5).toFixed(3); return applyAdj(); }
   if (!adj?.move) return;
   e.preventDefault(); adj.w = clamp(adj.w * (1 - e.deltaY * 0.001), 5, adj.box.classList.contains("pf-sfig") ? 200 : 100); applyAdj();
 }, { passive: false });

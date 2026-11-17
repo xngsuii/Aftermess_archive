@@ -87,18 +87,34 @@ export function dragAxis(p, t, dPos, dMove) {
 // 이미지를 끈 거리(화면 px)를 [위치 변화 %, 밀어내기 %]로 바꾼다. 가로 axis=0, 세로 axis=1
 // object-fit: cover 로 잘린 여유만큼만 위치(%)가 움직이므로, 여유로 나눠야 손가락을 그대로 따라온다
 export function imgDelta(im, px, axis) {
-  const box = axis ? im.offsetHeight : im.offsetWidth, r = im.getBoundingClientRect(), shown = axis ? r.height : r.width;
-  const u = px * box / (shown || 1);
+  // f: 화면 배율 (편집기의 맞춤 보기). 그려진 이미지 크기 = 원본 × 틀을 덮는 배율 × 확대
+  const par = im.parentElement, f = par.getBoundingClientRect().width / (par.offsetWidth || 1) || 1;
+  const u = px / f, box = axis ? im.offsetHeight : im.offsetWidth, z = imgZoom(im);
   const s = Math.max(im.offsetWidth / (im.naturalWidth || 1), im.offsetHeight / (im.naturalHeight || 1));
-  const slack = (axis ? im.naturalHeight : im.naturalWidth) * s - box;
+  const slack = (axis ? im.naturalHeight : im.naturalWidth) * s * z - box;
   return [slack > 0.5 ? u / slack * 100 : NaN, u / (box || 1) * 100];
+}
+const imgZoom = im => parseFloat(im.style.getPropertyValue("--z")) || 1;
+// 100%보다 줄였을 때: 틀을 덮도록 잘라 낸 뒤 줄이면 잘린 부분이 계속 안 보인다.
+// 그래서 이미지 전체가 들어가게(contain) 그린 다음, 원하는 크기가 되도록 배율을 다시 맞춘다. 위치 계산은 그대로 같다.
+export function fitImg(im) {
+  if (!im?.style) return;
+  const z = imgZoom(im), nw = im.naturalWidth, nh = im.naturalHeight, W = im.offsetWidth, H = im.offsetHeight;
+  let k = z, fit = "";
+  if (z < 1 && nw && W && H) { const a = W / nw, b = H / nh; k = z * Math.max(a, b) / Math.min(a, b); fit = "contain"; }
+  im.style.objectFit = fit;
+  im.style.transform = (im.style.transform || "").replace(/scale\([^)]*\)/, `scale(${+k.toFixed(4)})`);
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("load", e => { if (e.target.matches?.(".pf-main img")) fitImg(e.target); }, true);
+  addEventListener("resize", () => document.querySelectorAll(".pf-main img").forEach(fitImg));
 }
 // 이미지의 위치와 확대. key: "mainImg" | "sideImg"
 export const imgStyle = (c, key = "mainImg") => {
-  const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(0.5, +c[key + "Zoom"] || 1);
+  const pos = c[key + "Pos"] || (key === "mainImg" ? "50% 0%" : "50% 50%"), z = Math.max(0.5, Math.min(3, +c[key + "Zoom"] || 1));
   // DX·DY: 틀은 그대로 두고 이미지만 틀 밖으로 밀어낸 정도 (이미지 크기 대비 %)
   const dx = +c[key + "DX"] || 0, dy = +c[key + "DY"] || 0;
-  return `object-position:${esc(pos)};transform-origin:${esc(pos)};transform:${dx || dy ? `translate(${dx}%,${dy}%) ` : ""}scale(${z})`;
+  return `--z:${z};object-position:${esc(pos)};transform-origin:${esc(pos)};transform:${dx || dy ? `translate(${dx}%,${dy}%) ` : ""}scale(${z})`;
 };
 export const mainImgStyle = c => imgStyle(c, "mainImg");
 // 전신 이미지: Profile~Record 영역 안에서의 왼쪽·위 위치와 너비(영역 대비 %). 처음에는 오른쪽 위.

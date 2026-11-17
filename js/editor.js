@@ -1,6 +1,6 @@
 // 프로필 편집기: 서버에 저장하지 않고 이 브라우저(IndexedDB)에만 보관한다
 import { esc, toast, buildFields } from "./ui.js";
-import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile, dragAxis, imgDelta } from "./profile.js";
+import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile, dragAxis, imgDelta, fitImg } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
 const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
@@ -43,7 +43,7 @@ function syncZoom(k) {
 }
 function paintImg(k) {
   const im = imgOf(k);
-  if (im) { if (k === "sideImg") im.parentElement.style.cssText = sideFigStyle(data); else im.style.cssText = imgStyle(data, k); }
+  if (im) { if (k === "sideImg") im.parentElement.style.cssText = sideFigStyle(data); else { im.style.cssText = imgStyle(data, k); fitImg(im); } }
   clearTimeout(timer); timer = setTimeout(save, 500);
 }
 // 전신 이미지의 현재 위치·너비 (저장된 값이 없으면 화면에 그려진 값)
