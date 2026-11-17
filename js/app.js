@@ -552,7 +552,11 @@ document.addEventListener("pointermove", e => {
     // 틀 끝에 닿으면 이미지를 틀 밖으로 밀어낸다 (틀은 그대로)
     const ow = adj.t.offsetWidth / r.width, oh = adj.t.offsetHeight / r.height;
     [adj.x, adj.tx] = dragAxis(adj.x, adj.tx, dx, dx / ow); [adj.y, adj.ty] = dragAxis(adj.y, adj.ty, dy, dy / oh);
-  } else { adj.x = clamp(adj.x + (adj.move ? dx : -dx)); adj.y = clamp(adj.y + (adj.move ? dy : -dy)); }
+  } else {
+    // 전신 이미지는 편집기처럼 영역 밖까지 옮길 수 있다
+    const [lo, hi] = adj.box.classList.contains("pf-sfig") ? [-150, 150] : [0, 100];
+    adj.x = clamp(adj.x + (adj.move ? dx : -dx), lo, hi); adj.y = clamp(adj.y + (adj.move ? dy : -dy), lo, hi);
+  }
   applyAdj();
 });
 document.addEventListener("pointerup", () => drag = null);

@@ -162,3 +162,7 @@
 .pf-end{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px}
 .pf-end .pf-foot{margin-top:0}
 .pf-end span{font-size:17px;font-weight:700;line-height:1;color:var(--fg);letter-spacing:.2em;margin-right:-.2em}
+
+/* v13: 행간 1.85, 문단 간격 0.8em */
+.pf{line-height:1.85}
+.pf p{margin-bottom:.8em}
