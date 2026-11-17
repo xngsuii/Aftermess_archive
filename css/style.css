@@ -689,3 +689,8 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .hm-sub button:hover .mw::before{animation:glOne 1s steps(1,end) 1}
 .hm-sub button:hover .mw{animation:glJit 1s steps(1,end) 1}
 @media(prefers-reduced-motion:reduce){.hm-sub button:hover .mw,.hm-sub button:hover .mw::before{animation:none}}
+
+/* v36: 메뉴 자간 조금 더 줄이고 조금 아래로 */
+.hmenu>button,.hmenu>button:hover{letter-spacing:-.01em}
+.hmenu{top:calc(26% + 3.5vh)}
+@media(max-width:640px){.hmenu{top:calc(22% + 2.5vh)}}
