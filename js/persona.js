@@ -90,7 +90,7 @@ const schema = () => [
   T("role", "직무 (카드 뒷면)", "Entry-Fragger"),
   ...PROFILE_FIELDS.filter(f => f.k !== "useProfile")];
 const nextOrder = () => S.personas.reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1;
-const blank = () => ({ id: newId("p"), persona: true, faction: "persona", pfac: "ww", pairId: "", order: nextOrder(), affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [], assets: [] });
+const blank = () => ({ id: newId("p"), persona: true, faction: "persona", pfac: "ww", pairId: "", order: nextOrder(), affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "직무", v: "" }], tracks: [], assets: [] });
 
 // 파일 안의 이미지(data URL)를 서버 이미지로 올리고 id로 바꾼다
 async function upload(o) {

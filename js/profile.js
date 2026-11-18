@@ -14,7 +14,7 @@ export const PROFILE_FIELDS = [
   { type: "ranges", label: "상단 이미지 · 하단 페이드", items: [
     { k: "mainFadeH", label: "범위", min: 0, max: 100, step: 1, def: 62, mul: 1 },
     { k: "mainFade", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
-  { type: "reset", label: "위치·확대 초기화", keys: ["mainImgPos", "mainImgZoom", "mainImgDX", "mainImgDY"] },
+  { type: "reset", items: [{ label: "위치 초기화", keys: ["mainImgPos", "mainImgDX", "mainImgDY"] }, { label: "확대 초기화", keys: ["mainImgZoom"] }] },
   { k: "tagline", label: "한 줄 소개 (굵게)", fmt: true },
   { k: "intro", label: "소개글", type: "area" },
   { type: "head", label: "Profile" },
@@ -27,12 +27,12 @@ export const PROFILE_FIELDS = [
   { type: "ranges", label: "전신 이미지 · 하단 페이드", items: [
     { k: "sideFadeBH", label: "범위", min: 0, max: 60, step: 1, def: 14, mul: 1 },
     { k: "sideFadeB", label: "강도", min: 0, max: 1, step: 0.01, def: 1 }] },
-  { type: "reset", label: "위치·확대 초기화", keys: ["sideImgX", "sideImgY", "sideImgW"] },
+  { type: "reset", items: [{ label: "위치 초기화", keys: ["sideImgX", "sideImgY"] }, { label: "크기 초기화", keys: ["sideImgW"] }] },
   { k: "height", label: "키", ph: "189cm" },
   { k: "nation", label: "국적", ph: "홍콩인" },
   { k: "age", label: "나이", ph: "32" },
   { type: "head", label: "Affiliation" },
-  { k: "affil", label: "소속 및 계급", type: "list", item: "줄", fields: [{ k: "k", label: "항목", ph: "기관" }, { k: "v", label: "내용", ph: "WORLD'S WORST" }] },
+  { k: "affil", label: "소속 및 직무", type: "list", item: "줄", fields: [{ k: "k", label: "항목", ph: "기관" }, { k: "v", label: "내용", ph: "WORLD'S WORST" }] },
   { type: "head", label: "Record" },
   { k: "record", label: "이력 · 기타", type: "area" },
   { type: "head", label: "Prologue" },
@@ -167,7 +167,7 @@ export function renderProfile(c, opt = {}) {
       <span class="pf-trk-m" data-a="trkopen">${text}${body ? `<span class="pf-plus">+</span>` : ""}</span></div>${more}</div>`;
   };
   const left = sec("Profile", "프로필", fmt(c.profile), ph("프로필 본문"))
-    + sec("Affiliation", "소속 및 계급", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v) || (F ? "—" : "")}</dd></div>`).join("")}</dl>` : "", ph("소속 및 계급"))
+    + sec("Affiliation", "소속 및 직무", affil.length ? `<dl class="pf-dl">${affil.map(r => `<div><dt>${esc(r.k)}</dt><dd>${esc(r.v) || (F ? "—" : "")}</dd></div>`).join("")}</dl>` : "", ph("소속 및 직무"))
     + sec("Record", "이력 · ETC", fmt(c.record), ph("이력 · 기타"));
   const main = c.mainImg ? `<div class="pf-main" style="${fadeVars(c, "mainFadeH", "mainFade", 62, 1)}"><img ${imgAttr(c.mainImg)} ${opt.pos ? `data-pos="${opt.pos}"` : ""} style="${mainImgStyle(c)}" alt=""></div>`
     : F ? `<div class="pf-main pf-ph">MAIN IMAGE</div>` : "";

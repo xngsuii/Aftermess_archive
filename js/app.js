@@ -36,7 +36,7 @@ function hero(s) {
       <div class="hm-sub"><div>${FAC.map(k => `<button data-faction="${k}" class="${S.view === "faction" && S.fac === k ? "on" : ""}" data-a="go:${k}">${mw(S.factions[k].short || S.factions[k].name)}</button>`).join("")}</div></div>
       <button class="${S.view === "trivia" ? "on" : ""}" data-a="view:trivia">${mw("TRIVIA")}${mn("03")}</button>
     </nav>
-    ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%">` : ""}</section>`;
+    ${s.logo ? `<img class="hero-logo" alt="${esc(s.title)}" data-img="${esc(s.logo)}" data-pos="site|logo" style="left:${s.logoX ?? 50}%;top:${s.logoY ?? 60}%;width:${s.logoW ?? 60}%;--lw:${s.logoW ?? 60}">` : ""}</section>`;
 }
 function world(s) {
   const orgs = FAC.map((k, i) => { const f = S.factions[k]; return `
@@ -242,7 +242,7 @@ const EDIT = {
   funits: () => facForm("조직 구성", [T("unitsTitle", "섹션 제목", "Squad"), T("unitsSub", "설명"), T("unitsLabel", "우측 표시 글 (비우면 개수 자동 표시)", "3 SQD"), { k: "units", label: "조직", type: "list", item: "조직", fields: [T("code", "코드", "SQD. 01"), T("tag", "우측 태그", "ASSAULT"), T("name", "이름", "강습타격대"), T("sub", "부가 설명"), { k: "img", label: "이미지", type: "img" }, A("body", "펼쳤을 때 내용")] }]),
   fchron: () => facForm("Chronicle", [T("chronTitle", "섹션 제목"), T("chronSub", "설명", "주요 작전 연표 · 2071 — 2080"), { k: "chron", label: "사건", type: "list", item: "사건", fields: [T("date", "날짜", "2071. 11. 09"), T("tag", "우측 태그", "FIRST RECORD"), T("title", "제목"), { k: "hot", type: "check", def: false, label: "강조 (눈금과 태그를 진영 색으로)" }, A("body", "내용")], fold: ["date", "title"] }]),
   newchar: () => {
-    const c = { id: newId("c"), faction: S.fac, order: facChars().reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1, affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [], assets: [] };
+    const c = { id: newId("c"), faction: S.fac, order: facChars().reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1, affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "직무", v: "" }], tracks: [], assets: [] };
     openForm({ title: `캐릭터 추가 · ${S.factions[S.fac].name}`, schema: charSchema(), data: c, onSave: async v => { await saveChar(v); S.openChar = v.id; S.tab = "profile"; render(); } });
   },
   char: id => {
@@ -383,7 +383,12 @@ document.addEventListener("click", e => {
   if (name === "edit") e.stopPropagation();
   ACT[name]?.(i < 0 ? "" : a.slice(i + 1), el);
 });
-const themeLabel = () => document.getElementById("btn-theme").textContent = document.documentElement.dataset.theme === "light" ? "Dark" : "Light";
+// 테마 버튼: 바꿀 쪽을 그림으로 (어두울 때는 해, 밝을 때는 달)
+const SUN = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>`, MOON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6Z"/></svg>`;
+const themeLabel = () => {
+  const b = document.getElementById("btn-theme"), light = document.documentElement.dataset.theme === "light";
+  b.innerHTML = light ? MOON : SUN; b.title = b.ariaLabel = light ? "Dark" : "Light";
+};
 themeLabel();
 onAuthStateChanged(auth, u => {
   S.user = u; document.body.classList.toggle("admin", !!u);

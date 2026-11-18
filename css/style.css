@@ -698,3 +698,24 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 /* v37: 페어 프로필 → 아카이브 파일 */
 #persona .tabs .ps-go{clip-path:none;border:1px solid var(--line);border-radius:2px;margin:0 0 6px 4px;padding:3px 10px;font-size:10px;letter-spacing:.08em;background:none;color:var(--fg)}
 #persona .tabs .ps-go:hover{border-color:var(--accent);color:var(--accent)}
+
+/* v38: 진영 목차에도 배경 (뒤 글자와 겹치지 않게) */
+#facsw .toc{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:3px 0}
+/* 테마 버튼: 해·달 그림 */
+.ic-theme{display:inline-grid;place-items:center;width:30px;height:30px;padding:0!important}
+.ic-theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic-theme svg circle{fill:none}
+/* 편집기 상단바: 버튼은 오른쪽으로, 돌아가기는 정사각형 */
+.ed-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+.ed-back{width:34px;height:34px;padding:0!important;display:grid;place-items:center;flex:none;font-size:15px}
+@media(max-width:720px){#ed-fit{display:none}}
+/* 찾아간 칸 표시: 색만 (왼쪽 선 없음) */
+.fld.fld-hit{box-shadow:none}
+/* 초기화 버튼 나란히 */
+.fld-rst{display:flex;gap:8px;flex-wrap:wrap}
+/* 카드 뒷면에서 앞면 글자가 비치던 문제 (아이폰 사파리) */
+.pc-f{transform:rotateY(0deg) translateZ(1px);-webkit-transform:rotateY(0deg) translateZ(1px)}
+.pc-b{transform:rotateY(180deg) translateZ(1px);-webkit-transform:rotateY(180deg) translateZ(1px)}
+.pc-f *,.pc-b *,.pc-f::after,.pc-b::before{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+/* 메인 로고: 좁은 세로 화면에서는 가운데에 크게 */
+@media(max-width:640px){.hero-logo{left:50%!important;width:min(88vw,calc(var(--lw,60) * 1.7%))!important}}

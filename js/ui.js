@@ -180,15 +180,17 @@ export function buildFields(schema, obj, ctx = {}) {
       });
     } else if (f.type === "reset") {
       // 정해 둔 칸들을 처음 값으로 되돌린다 (슬라이더도 같이)
-      lab.remove();
-      const b = h("button", "btn", f.label); b.type = "button";
-      b.onclick = () => {
-        f.keys.forEach(k => delete obj[k]);
-        const root = w.closest("#ed-form, .mbox") || document;
-        f.keys.forEach(k => root.querySelectorAll(`input[data-k="${k}"]`).forEach(i => { i.value = i.dataset.def; i.show?.(); }));
-        ch();
-      };
-      w.append(b);
+      lab.remove(); w.classList.add("fld-rst");
+      (f.items || [f]).forEach(it => {
+        const b = h("button", "btn", it.label); b.type = "button";
+        b.onclick = () => {
+          it.keys.forEach(k => delete obj[k]);
+          const root = w.closest("#ed-form, .mbox") || document;
+          it.keys.forEach(k => root.querySelectorAll(`input[data-k="${k}"]`).forEach(i => { i.value = i.dataset.def; i.show?.(); }));
+          ch();
+        };
+        w.append(b);
+      });
     } else if (f.type === "imgs") {
       // 사진 여러 장: 고르면 바로 올라가고, ✕로 빼고, ◀ ▶로 순서를 바꾼다
       if (!Array.isArray(obj[f.k])) obj[f.k] = [];

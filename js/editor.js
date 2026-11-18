@@ -3,7 +3,7 @@ import { esc, toast, buildFields } from "./ui.js";
 import { PROFILE_FIELDS, renderProfile, imgStyle, sideFigStyle, packProfile, parseProfile, dragAxis, imgDelta, fitImg } from "./profile.js";
 
 const FONT = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css";
-const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "계급", v: "" }], tracks: [] });
+const BLANK = () => ({ faction: "ww", affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "직무", v: "" }], tracks: [] });
 let data = null, built = false, timer, fit = false, moving = null, grab = null; // moving: 옮기는 중인 이미지 ("mainImg" | "sideImg")
 
 const idb = () => new Promise((ok, no) => {
@@ -165,8 +165,8 @@ async function build() {
   built = true;
   data = { ...BLANK(), ...((await load()) || {}) };
   const el = document.getElementById("editor");
-  el.innerHTML = `<div class="ed-bar"><button class="btn" data-a="back" aria-label="돌아가기" title="돌아가기">←</button><h3>PROFILE EDITOR</h3>
-    <button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><div class="dd" id="ed-save"><button class="btn pri" id="ed-save-b">저장 ▾</button><div class="dd-m"><button id="ed-json">JSON 저장</button><button id="ed-html">HTML 저장</button><button id="ed-png">이미지 저장 (PNG)</button></div></div></div>
+  el.innerHTML = `<div class="ed-bar"><button class="btn ed-back" data-a="back" aria-label="돌아가기" title="돌아가기">←</button><h3>PROFILE EDITOR</h3>
+    <div class="ed-acts"><button class="btn" id="ed-fit">맞춤 보기</button><button class="btn" id="ed-reset">새로 쓰기</button><label class="btn" style="cursor:pointer">불러오기<input type="file" id="ed-open" accept=".json,.html,.htm" hidden></label><div class="dd" id="ed-save"><button class="btn pri" id="ed-save-b">저장 ▾</button><div class="dd-m"><button id="ed-json">JSON 저장</button><button id="ed-html">HTML 저장</button><button id="ed-png">이미지 저장 (PNG)</button></div></div></div></div>
     <div class="ed-grid"><div class="ed-pv" id="ed-pv"></div><div class="ed-form" id="ed-form"></div></div>`;
   form(); preview(); bindImage(el.querySelector("#ed-pv")); bindPick(el.querySelector("#ed-pv"));
   el.querySelector("#ed-fit").onclick = e => { fit = !fit; e.currentTarget.textContent = fit ? "100% 보기" : "맞춤 보기"; applyFit(); };
