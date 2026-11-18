@@ -719,3 +719,32 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 .pc-f *,.pc-b *,.pc-f::after,.pc-b::before{-webkit-backface-visibility:hidden;backface-visibility:hidden}
 /* 메인 로고: 좁은 세로 화면에서는 가운데에 크게 */
 @media(max-width:640px){.hero-logo{left:50%!important;width:min(88vw,calc(var(--lw,60) * 1.7%))!important}}
+
+/* v39 */
+/* 에디터 돌아가기: 테두리 없이 화살표만 */
+.ed-back{border:0!important;background:none!important}
+/* 카드 앞면을 띄우지 않는다 (원근 때문에 앞면이 살짝 커져 하단 페이드가 어긋났다) */
+.pc-f{transform:rotateY(0deg);-webkit-transform:rotateY(0deg)}
+.pc-b{transform:rotateY(180deg);-webkit-transform:rotateY(180deg)}
+.pc-f>*,.pc-b>*{-webkit-transform:translateZ(0);transform:translateZ(0)}
+/* 페르소나 ©: 웹은 Trivia 옆, 모바일은 AFTERMESS 바로 옆 기호처럼 */
+#bar .ps-mark{font:inherit;font-size:12px;color:var(--fg3);padding:0;background:none;border:0;cursor:pointer;line-height:1}
+#bar .ps-mark:hover{color:var(--fg)}
+#bar .ps-m{display:none;font-size:10px;margin:-6px 0 0 1px;align-self:center}
+@media(max-width:720px){#bar .ps-m{display:inline-block}#bar .brand{flex:none}#bar .ps-m{margin-right:auto}}
+@media(max-width:640px){
+  /* 설명 글 한 단계 작게 */
+  .ov h4{font-size:14.5px}.ov p{font-size:13.5px}
+  .chr .tg-h{font-size:13.5px}.chr .tg-b{font-size:12px}
+  .unit h4{font-size:18px}.unit .sub{font-size:9px}.unit .tg-b{font-size:12.5px}
+  .quote .en{font-size:13.5px}.quote .ko{font-size:12px}
+  /* 카드 글씨 작게 */
+  .pc-b b{font-size:14px}.pc-b span{font-size:8.5px}.pc-b i{margin:3px 0}
+  .pc-f .ft small{font-size:7.5px}.pc-f .ft strong{font-size:9.5px}.pc-f>b{font-size:15px}
+  /* 열기 / 닫기는 설명 아랫줄로 */
+  .sec-h.fold-h{flex-direction:column;align-items:flex-start;gap:8px}
+  /* ASSET: 한 줄에 세 개 */
+  .agrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:720px){#bar .to-ed{white-space:nowrap}}
+@media(max-width:420px){#bar{gap:10px;padding:0 12px}#bar .to-ed{padding:5px 8px;letter-spacing:.06em}}
