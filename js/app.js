@@ -304,7 +304,7 @@ const ACT = {
   hmf(_, el) { el.closest(".hmenu").classList.toggle("open"); },
   top() { slideTo(0); },
   // 모바일: 우하단 진영 바로가기 접기·펼치기 (기억해 둔다)
-  fswtog() { const m = document.getElementById("facsw").classList.toggle("min"); try { localStorage.setItem("afms-fsw", m ? "min" : ""); } catch (e) {} },
+  fswtog() { const m = document.getElementById("facsw").classList.toggle("min"); try { localStorage.setItem("afms-fsw", m ? "min" : "open"); } catch (e) {} },
   tog(_, el) { el.closest(".tg").classList.toggle("open"); },
   fold(k, el) {
     S.fold[k] = !S.fold[k];
@@ -392,7 +392,8 @@ const themeLabel = () => {
   b.innerHTML = light ? MOON : SUN; b.title = b.ariaLabel = light ? "Dark" : "Light";
 };
 themeLabel();
-try { if (localStorage.getItem("afms-fsw") === "min") document.getElementById("facsw").classList.add("min"); } catch (e) {}
+// 처음에는 접힌 상태 (펼쳐 둔 적이 있으면 펼친 채로). 접기는 모바일에서만 보인다
+{ let v = ""; try { v = localStorage.getItem("afms-fsw") || ""; } catch (e) {} if (v !== "open") document.getElementById("facsw").classList.add("min"); }
 onAuthStateChanged(auth, u => {
   S.user = u; document.body.classList.toggle("admin", !!u);
   if (S.site) render();
