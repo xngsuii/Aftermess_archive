@@ -82,6 +82,16 @@ export function lightbox(ids, i = 0, opt = {}) {
   lb.classList.add("on");
   lbShow();
 }
+// 휴대폰: 옆으로 밀어서 넘긴다
+{
+  let sx = null, sy = 0;
+  document.addEventListener("touchstart", e => { if (lbIds.length > 1 && e.target.closest("#lb")) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (sx == null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) { e.preventDefault(); lbStep(dx < 0 ? 1 : -1); }
+  });
+}
 export function lbStep(d) { if (lbIds.length) { lbI = (lbI + d + lbIds.length) % lbIds.length; lbShow(); } }
 export function lbClose() { document.getElementById("lb").classList.remove("on"); lbIds = []; }
 

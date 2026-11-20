@@ -748,3 +748,36 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
 }
 @media(max-width:720px){#bar .to-ed{white-space:nowrap}}
 @media(max-width:420px){#bar{gap:10px;padding:0 12px}#bar .to-ed{padding:5px 8px;letter-spacing:.06em}}
+
+/* v40 */
+/* 라이트박스 넘기기 버튼: 이미지보다 위에 (왼쪽 버튼이 이미지에 가려져 있었다) */
+.lb-nav{z-index:3}
+@media(max-width:640px){.lb-nav{width:32px;height:54px;font-size:28px}.lb-nav.l{left:4px}.lb-nav.r{right:4px}}
+/* 상단바 버튼 묶음: 모바일에서는 둘째 줄 오른쪽 */
+@media(max-width:640px){.ed-bar .ed-acts{flex-basis:100%}}
+/* 우하단 진영 바로가기: 모바일에서 접기 */
+.fsw-tg{display:none}
+@media(max-width:720px){
+  #facsw .fsw-tg{display:flex;align-items:center;gap:6px;height:26px;font-size:9px;letter-spacing:.14em;color:var(--fg2);border-right:2px solid var(--accent)}
+  #facsw .fsw-tg b::before{content:"−";font-size:13px;font-weight:400}
+  #facsw.min .fsw-tg b::before{content:"+"}
+  #facsw.min .fsw{display:none}
+}
+@media(max-width:640px){
+  /* 캐릭터·페르소나 파일: 편집 버튼들을 탭 위 줄로 */
+  .file .tabs{flex-wrap:wrap;row-gap:6px}
+  body.admin .file .tabs .sp,.file .tabs:has(.ps-go) .sp{order:-3;display:block;flex:1}
+  .file .tabs>.ed,.file .tabs>label.ed,.file .tabs>.ps-go{order:-2;margin-bottom:0}
+  body.admin .file .tabs::before,.file .tabs:has(.ps-go)::before{content:"";order:-1;flex-basis:100%;height:0}
+  /* 글 한 단계 작게 */
+  .era .tl p{font-size:12px}.era .tl strong{font-size:14.5px}
+  .syn-t{font-size:13.5px}.syn-row:first-child .syn-t{font-size:16.5px}.syn-y{font-size:15px}
+  .memo .tg-b{font-size:13.5px}
+  .pf{font-size:13.5px}.pf-dl dd{font-size:13.5px}
+  .mstats{font-size:11px}.mstats b{font-size:13.5px}
+  /* 두 단계 작게: 프로필 맨 위 글, 지도 좌상단 글 */
+  .pf-top,.pf-sub{font-size:8.5px}
+  .map-note{font-size:8.5px}
+  /* W.W 분대 이미지는 조금 낮게 */
+  body[data-faction="ww"] .unit,body[data-faction="ww"] .unit-top{min-height:230px}
+}

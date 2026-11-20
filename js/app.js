@@ -156,7 +156,7 @@ function assetsHtml(c) {
     return `<div class="agsec ${xs.length ? "" : "adm"}"><div class="grp"><b>${esc(label)}</b><i></i><span>${String(xs.length).padStart(2, "0")}</span>${add(g, "+ 추가")}</div><div class="agrid" data-agroup="${esc(g)}">${xs.map(fig).join("")}</div></div>`; };
   return `<div class="file-pad" data-achar="${c.id}">${groups.length ? names.map(n => sect(n, n)).join("") + sect("", "미분류") : `<div class="agrid">${a.map(fig).join("")}</div>`}
     ${a.length ? "" : `<p class="empty">등록된 에셋이 없습니다.</p>`}
-    <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가")} ${ed("agroups:" + c.id, "그룹 편집")} <span style="font-size:11px;color:var(--fg3);margin-left:8px">사진 파일을 끌어다 놓아도 추가됩니다 · 드래그로 순서${groups.length ? "·그룹" : ""} 변경 · ✕로 삭제 · 사진을 크게 연 뒤 아래쪽에서 설명 입력</span></p></div>`;
+    <p class="adm" style="margin-top:14px">${groups.length ? "" : add("", "+ 사진 추가")} ${ed("agroups:" + c.id, "그룹 편집")}</p></div>`;
 }
 function fileHtml(c) {
   const has = c.useProfile !== false, cur = !has && S.tab === "profile" ? "assets" : S.tab;
@@ -179,7 +179,7 @@ function drawFile(scroll) {
 function render() {
   document.body.dataset.faction = document.documentElement.dataset.faction = S.fac;
   document.body.dataset.view = S.view || "";
-  document.getElementById("facsw").innerHTML = FAC.map(k => { const f = S.factions[k];
+  document.getElementById("facsw").innerHTML = `<button class="fsw-tg" data-a="fswtog" aria-label="바로가기 접기·펼치기">INDEX <b></b></button>` + FAC.map(k => { const f = S.factions[k];
     const toc = [["s-ov", "Overview"], ["s-map", f.mapTitle || "Territory"], ...(k === "ww" ? [] : [["s-chron", f.chronTitle || "Chronicle"]]), ["s-units", f.unitsTitle || "Squad"], ["s-people", "Personnel"]];
     return `<div class="fsw ${S.fac === k ? "on" : ""}" data-faction="${k}"><button class="${S.fac === k ? "on" : ""}" data-a="go:${k}">${esc(f.short || f.name)}</button>
       ${S.fac === k ? `<nav class="toc">${toc.map(([id, l]) => `<button data-a="jump:${id}" data-toc="${id}">${esc(l)}</button>`).join("")}</nav>` : ""}</div>`; }).join("");
@@ -303,6 +303,8 @@ const ACT = {
   },
   hmf(_, el) { el.closest(".hmenu").classList.toggle("open"); },
   top() { slideTo(0); },
+  // 모바일: 우하단 진영 바로가기 접기·펼치기 (기억해 둔다)
+  fswtog() { const m = document.getElementById("facsw").classList.toggle("min"); try { localStorage.setItem("afms-fsw", m ? "min" : ""); } catch (e) {} },
   tog(_, el) { el.closest(".tg").classList.toggle("open"); },
   fold(k, el) {
     S.fold[k] = !S.fold[k];
@@ -390,6 +392,7 @@ const themeLabel = () => {
   b.innerHTML = light ? MOON : SUN; b.title = b.ariaLabel = light ? "Dark" : "Light";
 };
 themeLabel();
+try { if (localStorage.getItem("afms-fsw") === "min") document.getElementById("facsw").classList.add("min"); } catch (e) {}
 onAuthStateChanged(auth, u => {
   S.user = u; document.body.classList.toggle("admin", !!u);
   if (S.site) render();

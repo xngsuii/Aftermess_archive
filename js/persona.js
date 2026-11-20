@@ -50,9 +50,9 @@ export function drawPersona() {
     const [n, en] = facName(k);
     return `<div data-faction="${k}"><div class="grp"><b>${esc(n)}</b><small>${esc(en)}</small><i></i><span>${String(ps.length).padStart(2, "0")}</span></div><div class="pgrid">${ps.map(card).join("")}</div></div>`;
   }).join("");
-  el.innerHTML = `<div class="ed-bar ps-bar"><h3>PERSONA</h3>
+  el.innerHTML = `<div class="ed-bar ps-bar"><h3>PERSONA</h3><div class="ed-acts">
       ${S.user ? `<button class="btn" data-a="pnew">ADD PROFILE</button><label class="btn" style="cursor:pointer">IMPORT PROFILE<input type="file" class="ps-file" accept=".json,.html,.htm" hidden></label>` : ""}
-      <button class="btn" data-a="pback">ARCHIVE →</button></div>
+      <button class="btn" data-a="pback">ARCHIVE →</button></div></div>
     <div class="ps-body"><section class="sec wrap">
       <p class="kicker">AFTERMESS<br>PERSONA FILE</p>
       <h2 class="fname">Persona</h2><p class="fsub">// personal record · ${String(S.personas.length).padStart(2, "0")} subjects · 카드를 누르면 정보 열람</p>
