@@ -204,7 +204,7 @@ const charSchema = () => {
     ...(fac === "ww" ? [T("cardNo", "NUMBER (카드 앞면 좌상단)", "07")] : []),
     ...(fac === "milgram" ? [T("frontSub", "소속 (카드 앞면 작은 글)", "MAIN ELEMENT"), T("frontMain", "DIV (카드 앞면 굵은 글)", "HIGH COMMAND")] : []),
     ...(led ? [] : [{ k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. " + posHint }]),
-    { k: "thumb", label: led ? "카드 이미지" : "카드 뒷면 이미지", type: "inline", max: led ? 960 : 480, limit: led ? 160000 : 90000, hint: posHint },
+    { k: "thumb", label: led ? "카드 이미지" : "카드 뒷면 이미지", type: "inline", max: led ? 1216 : 480, limit: led ? 400000 : 90000, hint: posHint },
     ...(led ? [] : [T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG")]),
     T("role", led ? "소속 (카드에 표시)" : "직무 (카드 뒷면)", led ? "현장운영국 국장 · D-2 Director" : "Entry-Fragger"),
     ...(led ? [{ k: "brief", label: "한 줄 설명 (카드에 표시)", type: "area" }] : []),
