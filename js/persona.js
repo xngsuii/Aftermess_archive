@@ -91,7 +91,8 @@ const schema = () => [
   T("cardNo", "NUMBER (W.W일 때 카드 앞면 좌상단)", "07"),
   T("frontSub", "소속 (MILGRAM일 때 카드 앞면 작은 글)", "MAIN ELEMENT"), T("frontMain", "DIV (MILGRAM일 때 카드 앞면 굵은 글)", "HIGH COMMAND"),
   { k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. 저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." },
-  { k: "thumb", label: "카드 뒷면 이미지 (LEDGER는 가로 카드 왼쪽 이미지)", type: "inline", max: 480, limit: 90000 },
+  // LEDGER 가로 카드는 크게 보이므로 본편 LEDGER 카드와 같은 화질로 저장한다
+  { k: "thumb", label: "카드 뒷면 이미지 (LEDGER는 가로 카드 이미지)", type: "inline", max: 960, limit: 160000 },
   T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG"),
   T("role", "직무 (카드 뒷면 · LEDGER는 AFFIL.)", "Entry-Fragger"),
   { k: "brief", label: "한 줄 설명 (LEDGER 가로 카드에 표시)", type: "area" },
