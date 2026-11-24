@@ -81,22 +81,23 @@ export function closePersona() {
 
 // ---------- 편집 ----------
 const T = (k, label, ph) => ({ k, label, ph });
-const schema = () => [
+// LEDGER는 본편 LEDGER 인물처럼 가로 카드 하나 (앞뒷면 없음)
+const schema = (v = {}) => { const led = v.pfac === "ledger"; return [
   { type: "head", label: "목록 카드", open: true },
   T("name", "이름 (카드에 표시)", "SEVEN"),
   { k: "pfac", label: "진영", type: "select", options: GROUPS.map(k => [k, k === "none" ? "무소속" : facName(k)[0]]) },
   { k: "pairId", label: "페어 캐릭터 (프로필이 없으면 Secret File로 표시)", type: "select",
     options: [["", "(없음)"], ...[...S.chars].sort((a, b) => FAC.indexOf(a.faction) - FAC.indexOf(b.faction)).map(c => [c.id, `${facName(c.faction)[0]} · ${nameOf(c) || "이름 없음"}`])] },
   T("order", "순서 (작은 수가 앞)", "0"),
-  T("cardNo", "NUMBER (W.W일 때 카드 앞면 좌상단)", "07"),
+  ...(led ? [] : [T("cardNo", "NUMBER (W.W일 때 카드 앞면 좌상단)", "07"),
   T("frontSub", "소속 (MILGRAM일 때 카드 앞면 작은 글)", "MAIN ELEMENT"), T("frontMain", "DIV (MILGRAM일 때 카드 앞면 굵은 글)", "HIGH COMMAND"),
-  { k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. 저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." },
+  { k: "front", label: "카드 앞면 이미지", type: "inline", max: 480, limit: 90000, hint: "비워 두면 기본 실루엣이 나옵니다. 저장한 뒤 카드 이미지를 더블클릭하면 위치를 조정할 수 있습니다." }]),
   // LEDGER 가로 카드는 크게 보이므로 원본 크기(1216×640) 그대로 저장한다
-  { k: "thumb", label: "카드 뒷면 이미지 (LEDGER는 가로 카드 이미지)", type: "inline", max: 1216, limit: 400000 },
-  T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG"),
-  T("role", "직무 (카드 뒷면 · LEDGER는 AFFIL.)", "Entry-Fragger"),
-  { k: "brief", label: "한 줄 설명 (LEDGER 가로 카드에 표시)", type: "area" },
-  ...PROFILE_FIELDS.filter(f => f.k !== "useProfile")];
+  { k: "thumb", label: led ? "카드 이미지 (1216×640)" : "카드 뒷면 이미지", type: "inline", max: 1216, limit: 400000 },
+  ...(led ? [] : [T("gender", "성별 · 신장 · 국적 (카드 뒷면)", "Male · 189cm · HKG")]),
+  T("role", led ? "소속 (카드에 표시)" : "직무 (카드 뒷면)", led ? "현장운영국 국장 · D-2 Director" : "Entry-Fragger"),
+  ...(led ? [{ k: "brief", label: "한 줄 설명 (카드에 표시)", type: "area" }] : []),
+  ...PROFILE_FIELDS.filter(f => f.k !== "useProfile")]; };
 const nextOrder = () => S.personas.reduce((m, c) => Math.max(m, Number(c.order) || 0), -1) + 1;
 const blank = () => ({ id: newId("p"), persona: true, faction: "persona", pfac: "ww", pairId: "", order: nextOrder(), affil: [{ k: "기관", v: "" }, { k: "소속", v: "" }, { k: "직무", v: "" }], tracks: [], assets: [] });
 
@@ -157,10 +158,10 @@ export const PACT = {
       requestAnimationFrame(() => requestAnimationFrame(() => n.classList.remove("in")));
     }, 230);
   },
-  pnew() { openForm({ title: "페르소나 추가", schema: schema(), data: blank(), onSave: async v => { await saveChar(v); open = v.id; side = "me"; drawPersona(); } }); },
+  pnew() { openForm({ title: "페르소나 추가", schema, watch: "pfac", data: blank(), onSave: async v => { await saveChar(v); open = v.id; side = "me"; drawPersona(); } }); },
   pedit(id) {
     const p = S.personas.find(x => x.id === id);
-    openForm({ title: `페르소나 편집 · ${nameOf(p)}`, schema: schema(), data: p, onSave: async v => { await saveChar(v); drawPersona(); },
+    openForm({ title: `페르소나 편집 · ${nameOf(p)}`, schema, watch: "pfac", data: p, onSave: async v => { await saveChar(v); drawPersona(); },
       onDelete: async () => { await delChar(id); open = null; drawPersona(); } });
   }
 };

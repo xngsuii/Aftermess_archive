@@ -329,7 +329,8 @@ export function buildFields(schema, obj, ctx = {}) {
 }
 
 // 편집 창. 저장하면 안 쓰게 된 이미지를, 취소하면 새로 올린 이미지를 지운다.
-export function openForm({ title, schema, data, onSave, onDelete }) {
+// schema가 함수이면 watch 칸이 바뀔 때마다 양식을 다시 그린다 (예: 진영에 따라 칸이 달라지는 양식)
+export function openForm({ title, schema, data, onSave, onDelete, watch }) {
   const val = structuredClone(data || {});
   const before = collectIds(data || {});
   const m = document.getElementById("modal");
@@ -337,7 +338,14 @@ export function openForm({ title, schema, data, onSave, onDelete }) {
     <div class="mbody"></div>
     <footer>${onDelete ? '<button class="btn danger" data-del>삭제</button>' : ""}<span style="flex:1"></span>
     <button class="btn" data-x>취소</button><button class="btn pri" data-save>저장</button></footer></div>`;
-  m.querySelector(".mbody").append(buildFields(schema, val));
+  const body = m.querySelector(".mbody");
+  let last = watch && val[watch];
+  const draw = () => {
+    const y = body.scrollTop;
+    body.replaceChildren(buildFields(typeof schema === "function" ? schema(val) : schema, val, { change: () => { if (watch && val[watch] !== last) { last = val[watch]; draw(); } } }));
+    body.scrollTop = y;
+  };
+  draw();
   m.classList.add("on");
   const close = () => { m.classList.remove("on"); m.innerHTML = ""; };
   m.querySelectorAll("[data-x]").forEach(b => b.onclick = () => {

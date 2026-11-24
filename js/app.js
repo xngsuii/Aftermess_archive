@@ -320,7 +320,7 @@ const ACT = {
     S.tab = S.chars.find(c => c.id === id)?.useProfile === false ? "assets" : "profile";
     document.querySelectorAll(".pcard").forEach(el => el.classList.toggle("flip", el.dataset.id === S.openChar));
     document.querySelectorAll(".lcard").forEach(el => el.classList.toggle("sel", el.dataset.id === S.openChar));
-    drawFile();
+    drawFile(!!S.openChar); // 열면 파일 쪽으로 내려간다
   },
   tab(k) { S.tab = k; drawFile(); },
   // 태그를 누르면 켜고 끈다. 여러 개를 켤 수 있고, "전체"는 모두 끈다.
