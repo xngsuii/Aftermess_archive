@@ -788,6 +788,9 @@ body.in-persona #facsw,body.in-persona #totop{display:none}
   .mstats{font-size:10px;gap:6px 28px}.mstats b{font-size:12px;margin-left:8px}
   /* 탭 위 버튼들 높이 맞춤 */
   #persona .file .tabs>.ps-go{margin:0 0 0 4px}
-  .file .tabs>.ed,.file .tabs>label.ed,.file .tabs>.ps-go{height:24px;display:inline-flex;align-items:center;box-sizing:border-box;padding-top:0;padding-bottom:0;margin:0 0 0 4px;line-height:1;align-self:center}
+  .file .tabs>.ps-go,body.admin .file .tabs>.ed,body.admin .file .tabs>label.ed{height:24px;display:inline-flex;align-items:center;box-sizing:border-box;padding-top:0;padding-bottom:0;margin:0 0 0 4px;line-height:1;align-self:center}
 }
 @media(max-width:640px){.mstats{font-size:9px;gap:6px 10px;justify-content:space-between}.mstats span{white-space:nowrap}.mstats b{font-size:11px;margin-left:5px}}
+
+/* v42: LEDGER 페르소나 가로 카드 */
+#persona .lgrid .lcard{cursor:pointer}
